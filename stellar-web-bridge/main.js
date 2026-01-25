@@ -36,6 +36,7 @@ class BridgeBuilder {
         this.buildTime = 0;
 
         this.hoveredNode = null;
+        this.draggedNode = null;
         this.stressVisualization = false;
 
         this.init();
@@ -154,6 +155,14 @@ class BridgeBuilder {
         // Mouse interaction
         this.canvas.addEventListener('mousemove', (e) => {
             this.handleMouseMove(e);
+        });
+
+        this.canvas.addEventListener('mousedown', (e) => {
+            this.handleMouseDown(e);
+        });
+
+        this.canvas.addEventListener('mouseup', (e) => {
+            this.handleMouseUp(e);
         });
 
         this.canvas.addEventListener('click', (e) => {
@@ -485,6 +494,31 @@ class BridgeBuilder {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
+        // If dragging a node, update its position
+        if (this.draggedNode) {
+            // Update node position
+            this.draggedNode.x = x;
+            this.draggedNode.y = y;
+
+            // Zero out velocity while being dragged
+            this.draggedNode.vx = 0;
+            this.draggedNode.vy = 0;
+
+            // Update edge lengths for connected edges
+            this.algorithms.edges.forEach(edge => {
+                if (edge.nodeA.id === this.draggedNode.id || edge.nodeB.id === this.draggedNode.id) {
+                    edge.update();
+                }
+            });
+
+            // Don't animate while dragging - draw immediately
+            if (!this.isAnimating) {
+                this.draw();
+                this.updateStats();
+            }
+            return;
+        }
+
         // Find hovered node
         this.hoveredNode = null;
         const hoverRadius = this.params.nodeSize + 5;
@@ -496,14 +530,56 @@ class BridgeBuilder {
 
             if (dist <= hoverRadius) {
                 this.hoveredNode = node;
-                this.canvas.style.cursor = 'pointer';
-                this.draw();
+                this.canvas.style.cursor = node.isPlatform || node.isFixed ? 'not-allowed' : 'grab';
+                if (!this.isAnimating) {
+                    this.draw();
+                }
                 return;
             }
         }
 
         this.canvas.style.cursor = 'default';
-        this.draw();
+        if (!this.isAnimating) {
+            this.draw();
+        }
+    }
+
+    handleMouseDown(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Check if clicking on a node
+        const hoverRadius = this.params.nodeSize + 5;
+
+        for (let node of this.algorithms.nodes) {
+            const dx = node.x - x;
+            const dy = node.y - y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist <= hoverRadius) {
+                // Don't allow dragging platform/fixed nodes
+                if (!node.isPlatform && !node.isFixed) {
+                    this.draggedNode = node;
+                    this.canvas.style.cursor = 'grabbing';
+                    e.preventDefault();
+                }
+                return;
+            }
+        }
+    }
+
+    handleMouseUp(e) {
+        if (this.draggedNode) {
+            this.draggedNode = null;
+            this.canvas.style.cursor = 'default';
+
+            // Redraw to update hover state
+            if (!this.isAnimating) {
+                this.draw();
+                this.updateStats();
+            }
+        }
     }
 
     handleClick(e) {
@@ -535,6 +611,7 @@ class BridgeBuilder {
         this.algorithms.reset();
         this.isAnimating = false;
         this.hoveredNode = null;
+        this.draggedNode = null;
 
         // Reset sliders to defaults
         this.params = {
