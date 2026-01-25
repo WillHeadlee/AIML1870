@@ -97,6 +97,11 @@ class BridgeBuilder {
             this.draw();
         });
 
+        // Theme selector
+        document.getElementById('theme-select').addEventListener('change', (e) => {
+            this.switchTheme(e.target.value);
+        });
+
         // Platform sliders (update platforms in real-time)
         const platformSliders = ['platform-distance', 'height-diff'];
         platformSliders.forEach(id => {
@@ -307,20 +312,21 @@ class BridgeBuilder {
     draw() {
         // Draw sky gradient
         const skyGradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height * 0.7);
-        skyGradient.addColorStop(0, '#87CEEB');
-        skyGradient.addColorStop(1, '#B0E0E6');
+        skyGradient.addColorStop(0, this.colors.background);
+        skyGradient.addColorStop(1, this.colors.background + 'CC'); // Slightly lighter
         this.ctx.fillStyle = skyGradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height * 0.7);
 
         // Draw grass ground
         const grassGradient = this.ctx.createLinearGradient(0, this.canvas.height * 0.7, 0, this.canvas.height);
-        grassGradient.addColorStop(0, '#5FAD56');
-        grassGradient.addColorStop(1, '#4A7C59');
+        grassGradient.addColorStop(0, this.colors.grassGreen || '#5FAD56');
+        grassGradient.addColorStop(1, this.colors.darkGreen || '#4A7C59');
         this.ctx.fillStyle = grassGradient;
         this.ctx.fillRect(0, this.canvas.height * 0.7, this.canvas.width, this.canvas.height * 0.3);
 
         // Draw grass texture (small vertical lines)
-        this.ctx.strokeStyle = 'rgba(74, 124, 89, 0.3)';
+        const grassColor = this.colors.darkGreen || '#4A7C59';
+        this.ctx.strokeStyle = grassColor + '4D'; // 30% opacity
         this.ctx.lineWidth = 2;
         for (let i = 0; i < this.canvas.width; i += 10) {
             const grassHeight = Math.random() * 10 + 5;
@@ -487,6 +493,32 @@ class BridgeBuilder {
         integrityElement.textContent = integrityText;
         integrityElement.style.color = integrity.hasPath ?
             (integrity.percentage > 50 ? '#2E7D32' : '#FF9800') : '#F44336';
+    }
+
+    switchTheme(theme) {
+        // Remove existing theme classes
+        document.body.classList.remove('theme-night', 'theme-blueprint');
+
+        // Apply new theme
+        if (theme === 'night') {
+            document.body.classList.add('theme-night');
+            this.updateCanvasColors('#0F172A', '#1E3A2F', '#152920');
+        } else if (theme === 'blueprint') {
+            document.body.classList.add('theme-blueprint');
+            this.updateCanvasColors('#1E3A8A', '#1E3A5F', '#172B4D');
+        } else {
+            // Default theme
+            this.updateCanvasColors('#87CEEB', '#5FAD56', '#4A7C59');
+        }
+
+        // Redraw canvas with new colors
+        this.draw();
+    }
+
+    updateCanvasColors(skyColor, grassColor, darkGrassColor) {
+        this.colors.background = skyColor;
+        this.colors.grassGreen = grassColor;
+        this.colors.darkGreen = darkGrassColor;
     }
 
     handleMouseMove(e) {
