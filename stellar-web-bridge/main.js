@@ -90,6 +90,12 @@ class BridgeBuilder {
             this.draw();
         });
 
+        // Stress visualization checkbox
+        document.getElementById('stress-viz').addEventListener('change', (e) => {
+            this.stressVisualization = e.target.checked;
+            this.draw();
+        });
+
         // Platform sliders (update platforms in real-time)
         const platformSliders = ['platform-distance', 'height-diff'];
         platformSliders.forEach(id => {
@@ -245,14 +251,22 @@ class BridgeBuilder {
         // Update edges
         this.algorithms.edges.forEach(edge => edge.update());
 
-        // Apply very weak edge forces only when animation is complete (for final settling)
+        // Apply edge forces to counteract gravity and maintain structure
+        // Stronger forces when animation is running to build structure
+        const stiffness = this.algorithms.isGrowing ? 0.02 : 0.015;
+        this.algorithms.applyEdgeForces(stiffness);
+
+        // Check for broken edges (only when not growing)
         if (!this.algorithms.isGrowing) {
-            this.algorithms.applyEdgeForces(0.005);
+            const broken = this.algorithms.checkEdgeBreaking(1.6);
+            if (broken > 0) {
+                console.log(`${broken} edges broke!`);
+            }
         }
 
-        // Update nodes (for physics-based algorithms)
+        // Update nodes (for physics-based algorithms) with gravity
         this.algorithms.nodes.forEach(node => {
-            node.update(0.85, 2); // Lower damping and max velocity for stability
+            node.update(0.9, 3, 0.12); // damping, maxVelocity, gravity
 
             // Boundary constraints - keep nodes within canvas with padding
             if (!node.isFixed && !node.isPlatform) {
@@ -456,6 +470,14 @@ class BridgeBuilder {
         const totalConnections = this.algorithms.nodes.reduce((sum, node) => sum + node.connections.length, 0);
         const avgConnections = nodes > 0 ? (totalConnections / nodes).toFixed(1) : 0;
         document.getElementById('stat-avg-conn').textContent = avgConnections;
+
+        // Structural integrity
+        const integrity = this.algorithms.checkStructuralIntegrity();
+        const integrityText = integrity.hasPath ? `${Math.round(integrity.percentage)}%` : 'NONE';
+        const integrityElement = document.getElementById('stat-integrity');
+        integrityElement.textContent = integrityText;
+        integrityElement.style.color = integrity.hasPath ?
+            (integrity.percentage > 50 ? '#2E7D32' : '#FF9800') : '#F44336';
     }
 
     handleMouseMove(e) {

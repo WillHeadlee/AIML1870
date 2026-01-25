@@ -33,8 +33,11 @@ class Node {
     }
 
     // Update position (for physics-based algorithms)
-    update(damping = 0.95, maxVelocity = 5) {
+    update(damping = 0.95, maxVelocity = 5, gravity = 0.15) {
         if (!this.isFixed) {
+            // Apply gravity (downward force)
+            this.vy += gravity;
+
             // Apply damping
             this.vx *= damping;
             this.vy *= damping;
@@ -160,6 +163,39 @@ class Edge {
         ctx.save();
         ctx.globalAlpha = finalAlpha;
 
+        // Calculate stress/strain
+        const currentLength = this.nodeA.distanceTo(this.nodeB);
+        const strain = (currentLength - this.length) / this.length;
+
+        // Determine color based on stress if visualization is enabled
+        let baseColor1, baseColor2, baseColor3;
+
+        if (stressVisualization) {
+            if (strain > 0.15) {
+                // High tension (stretched) - red
+                const intensity = Math.min(strain * 2, 1);
+                baseColor1 = `rgb(${150 + intensity * 105}, ${50 * (1 - intensity)}, ${50 * (1 - intensity)})`;
+                baseColor2 = `rgb(${200 + intensity * 55}, ${80 * (1 - intensity)}, ${80 * (1 - intensity)})`;
+                baseColor3 = baseColor1;
+            } else if (strain < -0.05) {
+                // Compression - blue
+                const intensity = Math.min(Math.abs(strain) * 4, 1);
+                baseColor1 = `rgb(${50 * (1 - intensity)}, ${100 * (1 - intensity)}, ${150 + intensity * 105})`;
+                baseColor2 = `rgb(${80 * (1 - intensity)}, ${130 * (1 - intensity)}, ${200 + intensity * 55})`;
+                baseColor3 = baseColor1;
+            } else {
+                // Normal stress - green
+                baseColor1 = '#2E7D32';
+                baseColor2 = '#4CAF50';
+                baseColor3 = '#2E7D32';
+            }
+        } else {
+            // Default wood colors
+            baseColor1 = '#654321';
+            baseColor2 = '#8B4513';
+            baseColor3 = '#654321';
+        }
+
         // Draw wooden beam with 3D effect
         const dx = this.nodeB.x - this.nodeA.x;
         const dy = this.nodeB.y - this.nodeA.y;
@@ -173,9 +209,9 @@ class Edge {
             this.nodeA.y - Math.cos(angle) * thickness
         );
 
-        gradient.addColorStop(0, '#654321');
-        gradient.addColorStop(0.5, '#8B4513');
-        gradient.addColorStop(1, '#654321');
+        gradient.addColorStop(0, baseColor1);
+        gradient.addColorStop(0.5, baseColor2);
+        gradient.addColorStop(1, baseColor3);
 
         ctx.lineWidth = thickness * 2;
         ctx.strokeStyle = gradient;
@@ -187,13 +223,15 @@ class Edge {
         ctx.lineTo(this.nodeB.x, this.nodeB.y);
         ctx.stroke();
 
-        // Draw highlight edge for wood grain
-        ctx.lineWidth = thickness * 0.6;
-        ctx.strokeStyle = 'rgba(205, 133, 63, 0.4)';
-        ctx.beginPath();
-        ctx.moveTo(this.nodeA.x, this.nodeA.y);
-        ctx.lineTo(this.nodeB.x, this.nodeB.y);
-        ctx.stroke();
+        // Draw highlight edge for wood grain (unless stress viz is on)
+        if (!stressVisualization) {
+            ctx.lineWidth = thickness * 0.6;
+            ctx.strokeStyle = 'rgba(205, 133, 63, 0.4)';
+            ctx.beginPath();
+            ctx.moveTo(this.nodeA.x, this.nodeA.y);
+            ctx.lineTo(this.nodeB.x, this.nodeB.y);
+            ctx.stroke();
+        }
 
         ctx.restore();
     }

@@ -129,6 +129,35 @@ class BridgeAlgorithms {
         });
     }
 
+    // Check for overstretched edges and break them
+    checkEdgeBreaking(breakThreshold = 1.5) {
+        const edgesToRemove = [];
+
+        for (let i = this.edges.length - 1; i >= 0; i--) {
+            const edge = this.edges[i];
+            const currentLength = edge.nodeA.distanceTo(edge.nodeB);
+
+            // If edge is stretched beyond threshold, mark for removal
+            if (currentLength > edge.length * breakThreshold) {
+                edgesToRemove.push(i);
+
+                // Remove connections from nodes
+                const idxA = edge.nodeA.connections.indexOf(edge.nodeB.id);
+                if (idxA !== -1) edge.nodeA.connections.splice(idxA, 1);
+
+                const idxB = edge.nodeB.connections.indexOf(edge.nodeA.id);
+                if (idxB !== -1) edge.nodeB.connections.splice(idxB, 1);
+            }
+        }
+
+        // Remove broken edges
+        edgesToRemove.forEach(idx => {
+            this.edges.splice(idx, 1);
+        });
+
+        return edgesToRemove.length;
+    }
+
     // ===== VINE/ROOT GROWTH ALGORITHM =====
     vineGrowthStep(params) {
         const targetNodeCount = params.nodeDensity;
@@ -233,6 +262,65 @@ class BridgeAlgorithms {
         this.growthStep++;
         this.updateConnections(params.connectivityRadius);
         return true;
+    }
+
+    // Check structural integrity - BFS to see if left platform connects to right platform
+    checkStructuralIntegrity() {
+        if (this.nodes.length === 0) return { hasPath: false, percentage: 0 };
+
+        const leftPlatform = this.platforms[0];
+        const rightPlatform = this.platforms[1];
+
+        // Get left and right platform nodes
+        const leftNodes = this.nodes.filter(n => n.isPlatform && n.x < leftPlatform.x + leftPlatform.width + 10);
+        const rightNodes = this.nodes.filter(n => n.isPlatform && n.x > rightPlatform.x - 10);
+
+        if (leftNodes.length === 0 || rightNodes.length === 0) {
+            return { hasPath: false, percentage: 0 };
+        }
+
+        // BFS from left platform nodes to right platform nodes
+        const visited = new Set();
+        const queue = [];
+
+        // Start from all left platform nodes
+        leftNodes.forEach(node => {
+            queue.push(node.id);
+            visited.add(node.id);
+        });
+
+        let foundConnection = false;
+
+        while (queue.length > 0) {
+            const currentId = queue.shift();
+            const currentNode = this.nodes.find(n => n.id === currentId);
+
+            if (!currentNode) continue;
+
+            // Check if we reached right platform
+            if (rightNodes.some(n => n.id === currentId)) {
+                foundConnection = true;
+                break;
+            }
+
+            // Add connected nodes to queue
+            for (const connId of currentNode.connections) {
+                if (!visited.has(connId)) {
+                    visited.add(connId);
+                    queue.push(connId);
+                }
+            }
+        }
+
+        // Calculate integrity percentage based on connection density
+        const totalPossibleEdges = this.nodes.length * (this.nodes.length - 1) / 2;
+        const actualEdges = this.edges.length;
+        const densityPercentage = Math.min(100, (actualEdges / Math.max(1, totalPossibleEdges * 0.1)) * 100);
+
+        return {
+            hasPath: foundConnection,
+            percentage: foundConnection ? densityPercentage : 0
+        };
     }
 
     // Identify the top nodes that form the road surface

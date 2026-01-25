@@ -123,6 +123,13 @@
                         <label for="node-color">Node Color:</label>
                         <input type="color" id="node-color" value="#FFA726">
                     </div>
+
+                    <div class="slider-group">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="stress-viz" style="width: auto; cursor: pointer;">
+                            <span>Stress Visualization</span>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -153,6 +160,10 @@
                 <div class="stat-item">
                     <span class="stat-label">Avg Connections</span>
                     <span class="stat-value" id="stat-avg-conn">0.0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Structural Integrity</span>
+                    <span class="stat-value" id="stat-integrity">0%</span>
                 </div>
             </div>
         </div>
