@@ -136,18 +136,24 @@ class BridgeAlgorithms {
         const leftPlatform = this.platforms[0];
         const rightPlatform = this.platforms[1];
 
-        // Check if bridge has reached the right platform
-        const nonFixedNodes = this.nodes.filter(n => !n.isFixed && !n.isPlatform);
+        // Check if bridge actually connects to right platform anchor nodes
+        const rightAnchorNodes = this.nodes.filter(n => n.generation === 999);
 
-        let hasReachedRight = false;
-        if (nonFixedNodes.length > 0) {
-            const rightmostX = Math.max(...nonFixedNodes.map(n => n.x));
-            // Bridge has reached if we're within connectivity radius of right platform
-            hasReachedRight = rightmostX >= (rightPlatform.x - params.connectivityRadius);
+        // Check if any right anchor node has connections to non-fixed nodes
+        let hasConnectedToRight = false;
+        for (const anchor of rightAnchorNodes) {
+            for (const connId of anchor.connections) {
+                const connectedNode = this.nodes.find(n => n.id === connId);
+                if (connectedNode && !connectedNode.isFixed && !connectedNode.isPlatform) {
+                    hasConnectedToRight = true;
+                    break;
+                }
+            }
+            if (hasConnectedToRight) break;
         }
 
-        // Stop if we've reached the right platform AND have enough nodes, or hit max steps
-        if ((hasReachedRight && this.nodes.length >= targetNodeCount) || this.growthStep >= this.maxGrowthSteps) {
+        // Stop only if we've actually connected to the right platform AND have enough nodes
+        if ((hasConnectedToRight && this.nodes.length >= targetNodeCount) || this.growthStep >= this.maxGrowthSteps) {
             this.isGrowing = false;
             return false;
         }
@@ -170,7 +176,7 @@ class BridgeAlgorithms {
                 // Sort by x position (descending) and take the rightmost nodes
                 activeNodes.sort((a, b) => b.x - a.x);
                 // Take more tips if we haven't reached the right yet
-                const tipCount = hasReachedRight ? 3 : 7;
+                const tipCount = hasConnectedToRight ? 3 : 5;
                 growthTips = activeNodes.slice(0, tipCount);
             }
 
@@ -191,8 +197,8 @@ class BridgeAlgorithms {
         // Grow from each tip toward the right
         const newNodes = [];
         growthTips.forEach(tip => {
-            // Allow more nodes if we haven't reached the right yet
-            const nodeLimit = hasReachedRight ? targetNodeCount : targetNodeCount * 2;
+            // Allow more nodes if we haven't connected to the right yet
+            const nodeLimit = hasConnectedToRight ? targetNodeCount : targetNodeCount * 2;
             if (this.nodes.length + newNodes.length >= nodeLimit) return;
 
             // Calculate direction toward right platform
@@ -219,14 +225,16 @@ class BridgeAlgorithms {
                 const chaos = dist > 150 ? params.chaosFactor / 100 : (params.chaosFactor / 100) * 0.7;
                 const angle = Math.atan2(ny, nx) + (Math.random() - 0.5) * Math.PI * chaos * 0.5;
 
-                // Growth step length - longer steps when far away for faster spanning
-                const baseLength = dist > 150 ? Math.min(70, dist * 0.3) : Math.min(50, dist * 0.25);
-                const length = baseLength + Math.random() * 15;
+                // Growth step length - must be smaller than connectivity radius to ensure connection
+                // Use connectivity radius as constraint
+                const maxStep = params.connectivityRadius * 0.6; // 60% of connectivity radius
+                const baseLength = Math.min(maxStep, dist * 0.2);
+                const length = baseLength * (0.8 + Math.random() * 0.4); // 80-120% of base
 
-                // New node position with vertical variation
+                // New node position with controlled vertical variation
                 const newX = tip.x + Math.cos(angle) * length;
-                const newY = tip.y + Math.sin(angle) * length + params.sagArc * 0.02 + (Math.random() - 0.5) * 25;
-                const newZ = tip.z + (Math.random() - 0.5) * 20;
+                const newY = tip.y + Math.sin(angle) * length + params.sagArc * 0.02 + (Math.random() - 0.5) * 15;
+                const newZ = tip.z + (Math.random() - 0.5) * 15;
 
                 // Create new node
                 const newNode = new Node(
