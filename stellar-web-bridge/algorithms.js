@@ -55,12 +55,12 @@ class BridgeAlgorithms {
         const leftPlatform = this.platforms[0];
         const rightPlatform = this.platforms[1];
 
-        // Left seed nodes (starting points for bridge growth)
-        for (let i = 0; i < 4; i++) {
+        // Left seed nodes - starting points on left platform
+        for (let i = 0; i < 3; i++) {
             const node = new Node(
                 leftPlatform.x + leftPlatform.width,
-                leftPlatform.y + leftPlatform.height * 0.3 + (i * leftPlatform.height * 0.4 / 3),
-                (Math.random() - 0.5) * params.structuralDepth * 0.5,
+                leftPlatform.y + leftPlatform.height * 0.35 + (i * leftPlatform.height * 0.3 / 2),
+                0,
                 this.nodeIdCounter++,
                 0
             );
@@ -69,14 +69,14 @@ class BridgeAlgorithms {
             this.nodes.push(node);
         }
 
-        // Right anchor nodes (destination points)
-        for (let i = 0; i < 4; i++) {
+        // Right seed nodes - starting points on right platform
+        for (let i = 0; i < 3; i++) {
             const node = new Node(
                 rightPlatform.x,
-                rightPlatform.y + rightPlatform.height * 0.3 + (i * rightPlatform.height * 0.4 / 3),
-                (Math.random() - 0.5) * params.structuralDepth * 0.5,
+                rightPlatform.y + rightPlatform.height * 0.35 + (i * rightPlatform.height * 0.3 / 2),
+                0,
                 this.nodeIdCounter++,
-                999 // High generation to mark as destination
+                0
             );
             node.isPlatform = true;
             node.isFixed = true;
@@ -132,121 +132,99 @@ class BridgeAlgorithms {
     // ===== VINE/ROOT GROWTH ALGORITHM =====
     vineGrowthStep(params) {
         const targetNodeCount = params.nodeDensity;
-
         const leftPlatform = this.platforms[0];
         const rightPlatform = this.platforms[1];
 
-        // Check if bridge actually connects to right platform anchor nodes
-        const rightAnchorNodes = this.nodes.filter(n => n.generation === 999);
+        // Center point of the gap
+        const centerX = (leftPlatform.x + leftPlatform.width + rightPlatform.x) / 2;
+        const centerY = (leftPlatform.y + rightPlatform.y + leftPlatform.height + rightPlatform.height) / 4;
 
-        // Check if any right anchor node has connections to non-fixed nodes
-        let hasConnectedToRight = false;
-        for (const anchor of rightAnchorNodes) {
-            for (const connId of anchor.connections) {
-                const connectedNode = this.nodes.find(n => n.id === connId);
-                if (connectedNode && !connectedNode.isFixed && !connectedNode.isPlatform) {
-                    hasConnectedToRight = true;
-                    break;
-                }
-            }
-            if (hasConnectedToRight) break;
-        }
-
-        // Stop only if we've actually connected to the right platform AND have enough nodes
-        if ((hasConnectedToRight && this.nodes.length >= targetNodeCount) || this.growthStep >= this.maxGrowthSteps) {
+        // Stop if we have enough nodes or hit max steps
+        if (this.nodes.length >= targetNodeCount || this.growthStep >= this.maxGrowthSteps) {
             this.isGrowing = false;
             return false;
         }
 
-        // Target is always the right platform
-        const targetX = rightPlatform.x;
-        const targetY = rightPlatform.y + rightPlatform.height / 2;
-
-        // Find growth tips - nodes at the growing front
-        let growthTips = [];
+        // Find growth tips from BOTH sides
+        let leftTips = [];
+        let rightTips = [];
 
         if (this.growthStep === 0) {
-            // First step: grow from left platform/seed nodes only
-            growthTips = this.nodes.filter(node => node.isPlatform && node.generation === 0);
+            // First step: grow from both platform seed nodes
+            leftTips = this.nodes.filter(node => node.isPlatform && node.x < centerX);
+            rightTips = this.nodes.filter(node => node.isPlatform && node.x > centerX);
         } else {
-            // Find the rightmost nodes (growth front moving toward right)
+            // Get all non-fixed nodes
             const activeNodes = this.nodes.filter(node => !node.isFixed && !node.isPlatform);
 
-            if (activeNodes.length > 0) {
-                // Sort by x position (descending) and take the rightmost nodes
-                activeNodes.sort((a, b) => b.x - a.x);
-                // Take more tips if we haven't reached the right yet
-                const tipCount = hasConnectedToRight ? 3 : 5;
-                growthTips = activeNodes.slice(0, tipCount);
+            // Separate into left side (growing right) and right side (growing left)
+            const leftSideNodes = activeNodes.filter(n => n.x < centerX);
+            const rightSideNodes = activeNodes.filter(n => n.x > centerX);
+
+            // Get rightmost nodes from left side
+            if (leftSideNodes.length > 0) {
+                leftSideNodes.sort((a, b) => b.x - a.x);
+                leftTips = leftSideNodes.slice(0, 3);
             }
 
-            // If no active nodes, use recent generation
-            if (growthTips.length === 0) {
-                growthTips = this.nodes.filter(node =>
-                    node.generation >= this.growthStep - 2 && !node.isFixed && !node.isPlatform
-                ).slice(0, 5);
+            // Get leftmost nodes from right side
+            if (rightSideNodes.length > 0) {
+                rightSideNodes.sort((a, b) => a.x - b.x);
+                rightTips = rightSideNodes.slice(0, 3);
             }
         }
 
-        // If still no tips, stop growing
-        if (growthTips.length === 0) {
-            this.isGrowing = false;
-            return false;
-        }
-
-        // Grow from each tip toward the right
+        // Grow from both sides
         const newNodes = [];
-        growthTips.forEach(tip => {
-            // Allow more nodes if we haven't connected to the right yet
-            const nodeLimit = hasConnectedToRight ? targetNodeCount : targetNodeCount * 2;
-            if (this.nodes.length + newNodes.length >= nodeLimit) return;
 
-            // Calculate direction toward right platform
-            const dx = targetX - tip.x;
-            const dy = targetY - tip.y;
+        // Grow from left side toward center
+        leftTips.forEach(tip => {
+            if (this.nodes.length + newNodes.length >= targetNodeCount) return;
+
+            const dx = centerX - tip.x;
+            const dy = centerY - tip.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
-            // Don't skip if we're close - we want to connect to the platform
-            if (dist < 10) return;
+            if (dist < 20) return; // Close enough to center
 
-            const nx = dx / dist;
-            const ny = dy / dist;
+            // Direction toward center with chaos
+            const chaos = params.chaosFactor / 100;
+            const baseAngle = Math.atan2(dy, dx);
+            const angle = baseAngle + (Math.random() - 0.5) * Math.PI * chaos * 0.3;
 
-            // Determine number of branches based on probability
-            // Less branching when close to target for more direct growth
-            const branchProb = dist > 150 ? params.branchProbability : params.branchProbability * 0.5;
-            const shouldBranch = Math.random() * 100 < branchProb;
-            const branches = shouldBranch ? 2 : 1;
+            // Step size - 50% of connectivity radius for reliable connection
+            const stepSize = params.connectivityRadius * 0.5;
 
-            for (let b = 0; b < branches; b++) {
-                if (this.nodes.length + newNodes.length >= nodeLimit) break;
+            const newX = tip.x + Math.cos(angle) * stepSize;
+            const newY = tip.y + Math.sin(angle) * stepSize + params.sagArc * 0.02 + (Math.random() - 0.5) * 20;
+            const newZ = tip.z + (Math.random() - 0.5) * params.structuralDepth * 0.3;
 
-                // Add chaos/randomness to angle, less chaos when far from target for more direct growth
-                const chaos = dist > 150 ? params.chaosFactor / 100 : (params.chaosFactor / 100) * 0.7;
-                const angle = Math.atan2(ny, nx) + (Math.random() - 0.5) * Math.PI * chaos * 0.5;
+            newNodes.push(new Node(newX, newY, newZ, this.nodeIdCounter++, this.growthStep + 1));
+        });
 
-                // Growth step length - must be smaller than connectivity radius to ensure connection
-                // Use connectivity radius as constraint
-                const maxStep = params.connectivityRadius * 0.6; // 60% of connectivity radius
-                const baseLength = Math.min(maxStep, dist * 0.2);
-                const length = baseLength * (0.8 + Math.random() * 0.4); // 80-120% of base
+        // Grow from right side toward center
+        rightTips.forEach(tip => {
+            if (this.nodes.length + newNodes.length >= targetNodeCount) return;
 
-                // New node position with controlled vertical variation
-                const newX = tip.x + Math.cos(angle) * length;
-                const newY = tip.y + Math.sin(angle) * length + params.sagArc * 0.02 + (Math.random() - 0.5) * 15;
-                const newZ = tip.z + (Math.random() - 0.5) * 15;
+            const dx = centerX - tip.x;
+            const dy = centerY - tip.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
 
-                // Create new node
-                const newNode = new Node(
-                    newX,
-                    newY,
-                    newZ,
-                    this.nodeIdCounter++,
-                    this.growthStep + 1
-                );
+            if (dist < 20) return; // Close enough to center
 
-                newNodes.push(newNode);
-            }
+            // Direction toward center with chaos
+            const chaos = params.chaosFactor / 100;
+            const baseAngle = Math.atan2(dy, dx);
+            const angle = baseAngle + (Math.random() - 0.5) * Math.PI * chaos * 0.3;
+
+            // Step size - 50% of connectivity radius for reliable connection
+            const stepSize = params.connectivityRadius * 0.5;
+
+            const newX = tip.x + Math.cos(angle) * stepSize;
+            const newY = tip.y + Math.sin(angle) * stepSize + params.sagArc * 0.02 + (Math.random() - 0.5) * 20;
+            const newZ = tip.z + (Math.random() - 0.5) * params.structuralDepth * 0.3;
+
+            newNodes.push(new Node(newX, newY, newZ, this.nodeIdCounter++, this.growthStep + 1));
         });
 
         // Add all new nodes
