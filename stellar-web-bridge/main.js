@@ -8,8 +8,8 @@ class BridgeBuilder {
         this.params = {
             platformDistance: 500,
             heightDiff: 0,
-            nodeDensity: 50,
-            connectivityRadius: 80,
+            nodeDensity: 80,
+            connectivityRadius: 100,
             structuralDepth: 60,
             sagArc: 0,
             growthSpeed: 5,
@@ -518,8 +518,8 @@ class BridgeBuilder {
         this.params = {
             platformDistance: 500,
             heightDiff: 0,
-            nodeDensity: 50,
-            connectivityRadius: 80,
+            nodeDensity: 80,
+            connectivityRadius: 100,
             structuralDepth: 60,
             sagArc: 0,
             growthSpeed: 5,

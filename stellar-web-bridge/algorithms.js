@@ -133,14 +133,24 @@ class BridgeAlgorithms {
     vineGrowthStep(params) {
         const targetNodeCount = params.nodeDensity;
 
-        // Stop if we've reached target nodes or max steps
-        if (this.nodes.length >= targetNodeCount || this.growthStep >= this.maxGrowthSteps) {
+        const leftPlatform = this.platforms[0];
+        const rightPlatform = this.platforms[1];
+
+        // Check if bridge has reached the right platform
+        const nonFixedNodes = this.nodes.filter(n => !n.isFixed && !n.isPlatform);
+
+        let hasReachedRight = false;
+        if (nonFixedNodes.length > 0) {
+            const rightmostX = Math.max(...nonFixedNodes.map(n => n.x));
+            // Bridge has reached if we're within connectivity radius of right platform
+            hasReachedRight = rightmostX >= (rightPlatform.x - params.connectivityRadius);
+        }
+
+        // Stop if we've reached the right platform AND have enough nodes, or hit max steps
+        if ((hasReachedRight && this.nodes.length >= targetNodeCount) || this.growthStep >= this.maxGrowthSteps) {
             this.isGrowing = false;
             return false;
         }
-
-        const leftPlatform = this.platforms[0];
-        const rightPlatform = this.platforms[1];
 
         // Target is always the right platform
         const targetX = rightPlatform.x;
@@ -151,21 +161,23 @@ class BridgeAlgorithms {
 
         if (this.growthStep === 0) {
             // First step: grow from left platform/seed nodes only
-            growthTips = this.nodes.filter(node => node.isPlatform);
+            growthTips = this.nodes.filter(node => node.isPlatform && node.generation === 0);
         } else {
             // Find the rightmost nodes (growth front moving toward right)
-            const activeNodes = this.nodes.filter(node => !node.isFixed);
+            const activeNodes = this.nodes.filter(node => !node.isFixed && !node.isPlatform);
 
             if (activeNodes.length > 0) {
                 // Sort by x position (descending) and take the rightmost nodes
                 activeNodes.sort((a, b) => b.x - a.x);
-                growthTips = activeNodes.slice(0, 5); // Take top 5 rightmost nodes
+                // Take more tips if we haven't reached the right yet
+                const tipCount = hasReachedRight ? 3 : 7;
+                growthTips = activeNodes.slice(0, tipCount);
             }
 
             // If no active nodes, use recent generation
             if (growthTips.length === 0) {
                 growthTips = this.nodes.filter(node =>
-                    node.generation >= this.growthStep - 2 && !node.isFixed
+                    node.generation >= this.growthStep - 2 && !node.isFixed && !node.isPlatform
                 ).slice(0, 5);
             }
         }
@@ -179,7 +191,9 @@ class BridgeAlgorithms {
         // Grow from each tip toward the right
         const newNodes = [];
         growthTips.forEach(tip => {
-            if (this.nodes.length + newNodes.length >= targetNodeCount) return;
+            // Allow more nodes if we haven't reached the right yet
+            const nodeLimit = hasReachedRight ? targetNodeCount : targetNodeCount * 2;
+            if (this.nodes.length + newNodes.length >= nodeLimit) return;
 
             // Calculate direction toward right platform
             const dx = targetX - tip.x;
@@ -193,23 +207,25 @@ class BridgeAlgorithms {
             const ny = dy / dist;
 
             // Determine number of branches based on probability
-            const shouldBranch = Math.random() * 100 < params.branchProbability;
+            // Less branching when close to target for more direct growth
+            const branchProb = dist > 150 ? params.branchProbability : params.branchProbability * 0.5;
+            const shouldBranch = Math.random() * 100 < branchProb;
             const branches = shouldBranch ? 2 : 1;
 
             for (let b = 0; b < branches; b++) {
-                if (this.nodes.length + newNodes.length >= targetNodeCount) break;
+                if (this.nodes.length + newNodes.length >= nodeLimit) break;
 
-                // Add chaos/randomness to angle with more vertical spread
-                const chaos = params.chaosFactor / 100;
+                // Add chaos/randomness to angle, less chaos when far from target for more direct growth
+                const chaos = dist > 150 ? params.chaosFactor / 100 : (params.chaosFactor / 100) * 0.7;
                 const angle = Math.atan2(ny, nx) + (Math.random() - 0.5) * Math.PI * chaos * 0.5;
 
-                // Growth step length - adaptive based on distance remaining
-                const baseLength = Math.min(60, dist * 0.25);
-                const length = baseLength + Math.random() * 20;
+                // Growth step length - longer steps when far away for faster spanning
+                const baseLength = dist > 150 ? Math.min(70, dist * 0.3) : Math.min(50, dist * 0.25);
+                const length = baseLength + Math.random() * 15;
 
-                // New node position with increased vertical variation
+                // New node position with vertical variation
                 const newX = tip.x + Math.cos(angle) * length;
-                const newY = tip.y + Math.sin(angle) * length + params.sagArc * 0.02 + (Math.random() - 0.5) * 30;
+                const newY = tip.y + Math.sin(angle) * length + params.sagArc * 0.02 + (Math.random() - 0.5) * 25;
                 const newZ = tip.z + (Math.random() - 0.5) * 20;
 
                 // Create new node
