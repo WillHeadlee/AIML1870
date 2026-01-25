@@ -1,3 +1,60 @@
+// Spatial Grid for optimizing neighbor searches
+class SpatialGrid {
+    constructor(width, height, cellSize) {
+        this.width = width;
+        this.height = height;
+        this.cellSize = cellSize;
+        this.cols = Math.ceil(width / cellSize);
+        this.rows = Math.ceil(height / cellSize);
+        this.grid = [];
+        this.clear();
+    }
+
+    clear() {
+        this.grid = Array(this.rows).fill(null).map(() =>
+            Array(this.cols).fill(null).map(() => [])
+        );
+    }
+
+    // Get grid cell coordinates for a position
+    getCellCoords(x, y) {
+        const col = Math.floor(x / this.cellSize);
+        const row = Math.floor(y / this.cellSize);
+        return {
+            col: Math.max(0, Math.min(this.cols - 1, col)),
+            row: Math.max(0, Math.min(this.rows - 1, row))
+        };
+    }
+
+    // Insert a node into the grid
+    insert(node) {
+        const { col, row } = this.getCellCoords(node.x, node.y);
+        this.grid[row][col].push(node);
+    }
+
+    // Get nodes within a radius of a point (optimized)
+    getNodesInRadius(x, y, radius) {
+        const nearbyNodes = [];
+        const { col, row } = this.getCellCoords(x, y);
+
+        // Check cells in a square around the point
+        const cellRadius = Math.ceil(radius / this.cellSize);
+
+        for (let r = row - cellRadius; r <= row + cellRadius; r++) {
+            if (r < 0 || r >= this.rows) continue;
+
+            for (let c = col - cellRadius; c <= col + cellRadius; c++) {
+                if (c < 0 || c >= this.cols) continue;
+
+                // Add all nodes from this cell
+                nearbyNodes.push(...this.grid[r][c]);
+            }
+        }
+
+        return nearbyNodes;
+    }
+}
+
 // Bridge generation algorithms
 class BridgeAlgorithms {
     constructor() {
@@ -9,6 +66,8 @@ class BridgeAlgorithms {
         this.growthStep = 0;
         this.maxGrowthSteps = 200; // Increased to allow more time for bridge completion
         this.roadNodes = []; // Nodes that form the road on top
+        this.spatialGrid = null;
+        this.gridCellSize = 100; // Size of each grid cell for spatial partitioning
     }
 
     // Reset the bridge
@@ -47,6 +106,10 @@ class BridgeAlgorithms {
         );
 
         this.platforms = [leftPlatform, rightPlatform];
+
+        // Initialize spatial grid based on canvas size
+        this.spatialGrid = new SpatialGrid(canvas.width, canvas.height, this.gridCellSize);
+
         return this.platforms;
     }
 
@@ -90,7 +153,17 @@ class BridgeAlgorithms {
         this.edges = [];
         this.nodes.forEach(node => node.connections = []);
 
-        // Create edges within connectivity radius
+        // Use spatial partitioning for large node counts (>50 nodes)
+        if (this.nodes.length > 50 && this.spatialGrid) {
+            this.updateConnectionsOptimized(connectivityRadius);
+        } else {
+            // Use brute force for small node counts
+            this.updateConnectionsBruteForce(connectivityRadius);
+        }
+    }
+
+    // Brute force connection checking (O(n²))
+    updateConnectionsBruteForce(connectivityRadius) {
         for (let i = 0; i < this.nodes.length; i++) {
             for (let j = i + 1; j < this.nodes.length; j++) {
                 const distance = this.nodes[i].distanceTo(this.nodes[j]);
@@ -98,6 +171,45 @@ class BridgeAlgorithms {
                     this.nodes[i].addConnection(this.nodes[j].id);
                     this.nodes[j].addConnection(this.nodes[i].id);
                     this.edges.push(new Edge(this.nodes[i], this.nodes[j]));
+                }
+            }
+        }
+    }
+
+    // Optimized connection checking using spatial grid (O(n))
+    updateConnectionsOptimized(connectivityRadius) {
+        // Build spatial grid
+        this.spatialGrid.clear();
+        this.nodes.forEach(node => this.spatialGrid.insert(node));
+
+        // Check connections only for nearby nodes
+        const processedPairs = new Set();
+
+        for (let i = 0; i < this.nodes.length; i++) {
+            const node = this.nodes[i];
+            const nearbyNodes = this.spatialGrid.getNodesInRadius(
+                node.x,
+                node.y,
+                connectivityRadius
+            );
+
+            for (const otherNode of nearbyNodes) {
+                // Skip self and already processed pairs
+                if (node.id === otherNode.id) continue;
+
+                const pairKey = node.id < otherNode.id
+                    ? `${node.id}-${otherNode.id}`
+                    : `${otherNode.id}-${node.id}`;
+
+                if (processedPairs.has(pairKey)) continue;
+                processedPairs.add(pairKey);
+
+                // Check actual distance
+                const distance = node.distanceTo(otherNode);
+                if (distance <= connectivityRadius) {
+                    node.addConnection(otherNode.id);
+                    otherNode.addConnection(node.id);
+                    this.edges.push(new Edge(node, otherNode));
                 }
             }
         }
