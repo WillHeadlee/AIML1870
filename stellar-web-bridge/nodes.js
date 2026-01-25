@@ -298,3 +298,123 @@ class Platform {
         ctx.fillRect(this.x, this.y - 5, this.width, 5);
     }
 }
+
+// Road class represents the drivable surface on top of the bridge
+class Road {
+    constructor(roadNodeIds, allNodes, platforms) {
+        this.roadNodeIds = roadNodeIds;
+        this.allNodes = allNodes;
+        this.platforms = platforms;
+    }
+
+    // Build the complete road path including platform edges
+    buildRoadPath() {
+        if (this.roadNodeIds.length === 0) {
+            return [];
+        }
+
+        // Get road node objects and sort by x position
+        const roadNodeObjects = this.roadNodeIds
+            .map(id => this.allNodes.find(n => n.id === id))
+            .filter(n => n !== undefined)
+            .sort((a, b) => a.x - b.x);
+
+        if (roadNodeObjects.length === 0) {
+            return [];
+        }
+
+        // Add platform edge points to road
+        const leftPlatform = this.platforms[0];
+        const rightPlatform = this.platforms[1];
+
+        const leftEdgeNode = {
+            x: leftPlatform.x + leftPlatform.width,
+            y: roadNodeObjects[0].y
+        };
+
+        const rightEdgeNode = {
+            x: rightPlatform.x,
+            y: roadNodeObjects[roadNodeObjects.length - 1].y
+        };
+
+        return [leftEdgeNode, ...roadNodeObjects, rightEdgeNode];
+    }
+
+    // Draw the road surface
+    draw(ctx, roadHeight) {
+        const fullRoadPath = this.buildRoadPath();
+
+        if (fullRoadPath.length < 2) {
+            return;
+        }
+
+        // Draw road base with smooth curves
+        ctx.fillStyle = '#696969';
+        ctx.beginPath();
+
+        // Top edge - smooth curve through points
+        ctx.moveTo(fullRoadPath[0].x, fullRoadPath[0].y - roadHeight / 2);
+        for (let i = 1; i < fullRoadPath.length; i++) {
+            const xc = (fullRoadPath[i].x + fullRoadPath[i - 1].x) / 2;
+            const yc = (fullRoadPath[i].y + fullRoadPath[i - 1].y) / 2 - roadHeight / 2;
+            ctx.quadraticCurveTo(
+                fullRoadPath[i - 1].x, fullRoadPath[i - 1].y - roadHeight / 2,
+                xc, yc
+            );
+        }
+        ctx.lineTo(
+            fullRoadPath[fullRoadPath.length - 1].x,
+            fullRoadPath[fullRoadPath.length - 1].y - roadHeight / 2
+        );
+
+        // Bottom edge
+        ctx.lineTo(
+            fullRoadPath[fullRoadPath.length - 1].x,
+            fullRoadPath[fullRoadPath.length - 1].y + roadHeight / 2
+        );
+        for (let i = fullRoadPath.length - 2; i >= 0; i--) {
+            const xc = (fullRoadPath[i].x + fullRoadPath[i + 1].x) / 2;
+            const yc = (fullRoadPath[i].y + fullRoadPath[i + 1].y) / 2 + roadHeight / 2;
+            ctx.quadraticCurveTo(
+                fullRoadPath[i + 1].x, fullRoadPath[i + 1].y + roadHeight / 2,
+                xc, yc
+            );
+        }
+        ctx.lineTo(fullRoadPath[0].x, fullRoadPath[0].y + roadHeight / 2);
+
+        ctx.closePath();
+        ctx.fill();
+
+        // Road border
+        ctx.strokeStyle = '#4A4A4A';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Yellow center line (smooth dashed line)
+        this.drawCenterLine(ctx, fullRoadPath);
+    }
+
+    // Draw yellow center line
+    drawCenterLine(ctx, roadPath) {
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([15, 10]);
+        ctx.beginPath();
+        ctx.moveTo(roadPath[0].x, roadPath[0].y);
+
+        for (let i = 1; i < roadPath.length; i++) {
+            const xc = (roadPath[i].x + roadPath[i - 1].x) / 2;
+            const yc = (roadPath[i].y + roadPath[i - 1].y) / 2;
+            ctx.quadraticCurveTo(
+                roadPath[i - 1].x, roadPath[i - 1].y,
+                xc, yc
+            );
+        }
+        ctx.lineTo(
+            roadPath[roadPath.length - 1].x,
+            roadPath[roadPath.length - 1].y
+        );
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+}
