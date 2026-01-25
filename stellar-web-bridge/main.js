@@ -8,8 +8,8 @@ class BridgeBuilder {
         this.params = {
             platformDistance: 500,
             heightDiff: 0,
-            nodeDensity: 40,
-            connectivityRadius: 60,
+            nodeDensity: 50,
+            connectivityRadius: 80,
             structuralDepth: 60,
             sagArc: 0,
             growthSpeed: 5,
@@ -324,14 +324,23 @@ class BridgeBuilder {
         });
 
         // Draw continuous road surface first (below nodes)
-        if (this.algorithms.roadNodes.length > 1) {
+        if (this.algorithms.roadNodes.length > 0) {
             // Sort road nodes by x position for proper connection
             const roadNodeObjects = this.algorithms.roadNodes
                 .map(id => this.algorithms.nodes.find(n => n.id === id))
                 .filter(n => n !== undefined)
                 .sort((a, b) => a.x - b.x);
 
-            if (roadNodeObjects.length > 1) {
+            // Add platform edge points to road
+            const leftPlatform = this.algorithms.platforms[0];
+            const rightPlatform = this.algorithms.platforms[1];
+
+            const leftEdgeNode = { x: leftPlatform.x + leftPlatform.width, y: roadNodeObjects.length > 0 ? roadNodeObjects[0].y : leftPlatform.y + leftPlatform.height * 0.4 };
+            const rightEdgeNode = { x: rightPlatform.x, y: roadNodeObjects.length > 0 ? roadNodeObjects[roadNodeObjects.length - 1].y : rightPlatform.y + rightPlatform.height * 0.4 };
+
+            const fullRoadPath = [leftEdgeNode, ...roadNodeObjects, rightEdgeNode];
+
+            if (fullRoadPath.length > 1) {
                 const roadHeight = this.params.nodeSize * 3;
 
                 // Draw road base with smooth curves
@@ -339,34 +348,34 @@ class BridgeBuilder {
                 this.ctx.beginPath();
 
                 // Top edge - smooth curve through points
-                this.ctx.moveTo(roadNodeObjects[0].x, roadNodeObjects[0].y - roadHeight/2);
-                for (let i = 1; i < roadNodeObjects.length; i++) {
-                    const xc = (roadNodeObjects[i].x + roadNodeObjects[i - 1].x) / 2;
-                    const yc = (roadNodeObjects[i].y + roadNodeObjects[i - 1].y) / 2 - roadHeight/2;
+                this.ctx.moveTo(fullRoadPath[0].x, fullRoadPath[0].y - roadHeight/2);
+                for (let i = 1; i < fullRoadPath.length; i++) {
+                    const xc = (fullRoadPath[i].x + fullRoadPath[i - 1].x) / 2;
+                    const yc = (fullRoadPath[i].y + fullRoadPath[i - 1].y) / 2 - roadHeight/2;
                     this.ctx.quadraticCurveTo(
-                        roadNodeObjects[i - 1].x, roadNodeObjects[i - 1].y - roadHeight/2,
+                        fullRoadPath[i - 1].x, fullRoadPath[i - 1].y - roadHeight/2,
                         xc, yc
                     );
                 }
                 this.ctx.lineTo(
-                    roadNodeObjects[roadNodeObjects.length - 1].x,
-                    roadNodeObjects[roadNodeObjects.length - 1].y - roadHeight/2
+                    fullRoadPath[fullRoadPath.length - 1].x,
+                    fullRoadPath[fullRoadPath.length - 1].y - roadHeight/2
                 );
 
                 // Bottom edge
                 this.ctx.lineTo(
-                    roadNodeObjects[roadNodeObjects.length - 1].x,
-                    roadNodeObjects[roadNodeObjects.length - 1].y + roadHeight/2
+                    fullRoadPath[fullRoadPath.length - 1].x,
+                    fullRoadPath[fullRoadPath.length - 1].y + roadHeight/2
                 );
-                for (let i = roadNodeObjects.length - 2; i >= 0; i--) {
-                    const xc = (roadNodeObjects[i].x + roadNodeObjects[i + 1].x) / 2;
-                    const yc = (roadNodeObjects[i].y + roadNodeObjects[i + 1].y) / 2 + roadHeight/2;
+                for (let i = fullRoadPath.length - 2; i >= 0; i--) {
+                    const xc = (fullRoadPath[i].x + fullRoadPath[i + 1].x) / 2;
+                    const yc = (fullRoadPath[i].y + fullRoadPath[i + 1].y) / 2 + roadHeight/2;
                     this.ctx.quadraticCurveTo(
-                        roadNodeObjects[i + 1].x, roadNodeObjects[i + 1].y + roadHeight/2,
+                        fullRoadPath[i + 1].x, fullRoadPath[i + 1].y + roadHeight/2,
                         xc, yc
                     );
                 }
-                this.ctx.lineTo(roadNodeObjects[0].x, roadNodeObjects[0].y + roadHeight/2);
+                this.ctx.lineTo(fullRoadPath[0].x, fullRoadPath[0].y + roadHeight/2);
 
                 this.ctx.closePath();
                 this.ctx.fill();
@@ -381,18 +390,18 @@ class BridgeBuilder {
                 this.ctx.lineWidth = 3;
                 this.ctx.setLineDash([15, 10]);
                 this.ctx.beginPath();
-                this.ctx.moveTo(roadNodeObjects[0].x, roadNodeObjects[0].y);
-                for (let i = 1; i < roadNodeObjects.length; i++) {
-                    const xc = (roadNodeObjects[i].x + roadNodeObjects[i - 1].x) / 2;
-                    const yc = (roadNodeObjects[i].y + roadNodeObjects[i - 1].y) / 2;
+                this.ctx.moveTo(fullRoadPath[0].x, fullRoadPath[0].y);
+                for (let i = 1; i < fullRoadPath.length; i++) {
+                    const xc = (fullRoadPath[i].x + fullRoadPath[i - 1].x) / 2;
+                    const yc = (fullRoadPath[i].y + fullRoadPath[i - 1].y) / 2;
                     this.ctx.quadraticCurveTo(
-                        roadNodeObjects[i - 1].x, roadNodeObjects[i - 1].y,
+                        fullRoadPath[i - 1].x, fullRoadPath[i - 1].y,
                         xc, yc
                     );
                 }
                 this.ctx.lineTo(
-                    roadNodeObjects[roadNodeObjects.length - 1].x,
-                    roadNodeObjects[roadNodeObjects.length - 1].y
+                    fullRoadPath[fullRoadPath.length - 1].x,
+                    fullRoadPath[fullRoadPath.length - 1].y
                 );
                 this.ctx.stroke();
                 this.ctx.setLineDash([]);
@@ -509,8 +518,8 @@ class BridgeBuilder {
         this.params = {
             platformDistance: 500,
             heightDiff: 0,
-            nodeDensity: 40,
-            connectivityRadius: 60,
+            nodeDensity: 50,
+            connectivityRadius: 80,
             structuralDepth: 60,
             sagArc: 0,
             growthSpeed: 5,

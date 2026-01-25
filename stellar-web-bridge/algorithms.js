@@ -27,21 +27,21 @@ class BridgeAlgorithms {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
 
-        const platformWidth = 60;
-        const platformHeight = 80;
+        const platformWidth = 80;
+        const platformHeight = canvas.height * 0.6; // Tall canyon edges
 
-        // Left platform
+        // Left platform (canyon edge)
         const leftPlatform = new Platform(
             centerX - platformDistance / 2 - platformWidth,
-            centerY - platformHeight / 2,
+            canvas.height * 0.7 - platformHeight,
             platformWidth,
             platformHeight
         );
 
-        // Right platform (with height difference)
+        // Right platform (canyon edge with height difference)
         const rightPlatform = new Platform(
             centerX + platformDistance / 2,
-            centerY - platformHeight / 2 + heightDiff,
+            canvas.height * 0.7 - platformHeight + heightDiff,
             platformWidth,
             platformHeight
         );
@@ -53,17 +53,31 @@ class BridgeAlgorithms {
     // Create seed nodes on platforms
     createSeedNodes(params) {
         const leftPlatform = this.platforms[0];
+        const rightPlatform = this.platforms[1];
 
-        // Only left seed nodes (starting points for bridge growth)
-        for (let i = 0; i < 3; i++) {
+        // Left seed nodes (starting points for bridge growth)
+        for (let i = 0; i < 4; i++) {
             const node = new Node(
                 leftPlatform.x + leftPlatform.width,
-                leftPlatform.y + leftPlatform.height * (i + 1) / 4,
+                leftPlatform.y + leftPlatform.height * 0.3 + (i * leftPlatform.height * 0.4 / 3),
                 (Math.random() - 0.5) * params.structuralDepth * 0.5,
                 this.nodeIdCounter++,
                 0
             );
-            // Mark as platform for visual distinction and to anchor them
+            node.isPlatform = true;
+            node.isFixed = true;
+            this.nodes.push(node);
+        }
+
+        // Right anchor nodes (destination points)
+        for (let i = 0; i < 4; i++) {
+            const node = new Node(
+                rightPlatform.x,
+                rightPlatform.y + rightPlatform.height * 0.3 + (i * rightPlatform.height * 0.4 / 3),
+                (Math.random() - 0.5) * params.structuralDepth * 0.5,
+                this.nodeIdCounter++,
+                999 // High generation to mark as destination
+            );
             node.isPlatform = true;
             node.isFixed = true;
             this.nodes.push(node);
@@ -172,7 +186,8 @@ class BridgeAlgorithms {
             const dy = targetY - tip.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
-            if (dist < 30) return; // Already very close to target
+            // Don't skip if we're close - we want to connect to the platform
+            if (dist < 10) return;
 
             const nx = dx / dist;
             const ny = dy / dist;
@@ -184,18 +199,18 @@ class BridgeAlgorithms {
             for (let b = 0; b < branches; b++) {
                 if (this.nodes.length + newNodes.length >= targetNodeCount) break;
 
-                // Add chaos/randomness to angle
+                // Add chaos/randomness to angle with more vertical spread
                 const chaos = params.chaosFactor / 100;
-                const angle = Math.atan2(ny, nx) + (Math.random() - 0.5) * Math.PI * chaos * 0.3;
+                const angle = Math.atan2(ny, nx) + (Math.random() - 0.5) * Math.PI * chaos * 0.5;
 
                 // Growth step length - adaptive based on distance remaining
                 const baseLength = Math.min(60, dist * 0.25);
                 const length = baseLength + Math.random() * 20;
 
-                // New node position
+                // New node position with increased vertical variation
                 const newX = tip.x + Math.cos(angle) * length;
-                const newY = tip.y + Math.sin(angle) * length + params.sagArc * 0.02;
-                const newZ = tip.z + (Math.random() - 0.5) * 15;
+                const newY = tip.y + Math.sin(angle) * length + params.sagArc * 0.02 + (Math.random() - 0.5) * 30;
+                const newZ = tip.z + (Math.random() - 0.5) * 20;
 
                 // Create new node
                 const newNode = new Node(
