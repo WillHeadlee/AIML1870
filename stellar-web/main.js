@@ -983,10 +983,11 @@ function animate(currentTime) {
         }
     }
 
-    // Update stats
-    if (Math.floor(currentTime / 100) % 5 === 0) { // Update every 500ms
+    // Update stats and UI
+    if (Math.floor(currentTime / 100) % 2 === 0) { // Update every 200ms for more responsive UI
         updateStatsDisplay();
         updateMoneyDisplay();
+        updateUpgradeDisplay();
     }
 
     // Auto-save every 30 seconds
