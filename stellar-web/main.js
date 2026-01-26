@@ -12,12 +12,12 @@ window.addEventListener('resize', resizeCanvas);
 
 // Configuration
 const config = {
-    nodeCount: 50,
+    nodeCount: 0,
     connectivity: 150,
     speed: 1.0,
     nodeSize: 4,
-    trailLength: 30,
-    mouseGravity: 2.0,
+    trailLength: 0,
+    mouseGravity: 0.5,
     paused: false
 };
 
