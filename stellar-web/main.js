@@ -13,7 +13,7 @@ window.addEventListener('resize', resizeCanvas);
 // Configuration (for non-gameplay visuals)
 const config = {
     nodeCount: 0,
-    trailLength: 0,
+    trailLength: 50,
     nodeHue: 200, // Blue hue for basic nodes (0-360)
     paused: false
 };
