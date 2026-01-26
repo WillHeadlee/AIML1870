@@ -1,0 +1,334 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0d1b2a;
+    color: #ffffff;
+    overflow: hidden;
+}
+
+.header {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0 15px;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.header-controls {
+    display: flex;
+    gap: 5px;
+    pointer-events: auto;
+}
+
+.icon-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+}
+
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: #1a2332;
+    margin: 10% auto;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    width: 80%;
+    max-width: 400px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+    font-size: 0.9em;
+}
+
+.modal-content h2 {
+    margin-bottom: 10px;
+    color: #4da6ff;
+    font-size: 1.2em;
+}
+
+.modal-content ul {
+    list-style: none;
+    line-height: 1.6;
+}
+
+.modal-content li {
+    margin-bottom: 5px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 20px;
+}
+
+.close:hover,
+.close:focus {
+    color: white;
+}
+
+/* Control Panel */
+.control-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(26, 35, 50, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 15px;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 200;
+    backdrop-filter: blur(10px);
+    max-height: 45vh;
+    overflow-y: auto;
+}
+
+.control-panel.open {
+    transform: translateY(0);
+}
+
+.toggle-btn {
+    position: absolute;
+    top: -40px;
+    right: 15px;
+    background: rgba(26, 35, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+}
+
+.toggle-btn:hover {
+    background: rgba(77, 166, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.panel-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: all 0.3s;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn:hover {
+    color: white;
+}
+
+.tab-btn.active {
+    color: #4da6ff;
+    border-bottom-color: #4da6ff;
+}
+
+.panel-actions {
+    position: absolute;
+    top: 10px;
+    right: 60px;
+    display: flex;
+    gap: 5px;
+}
+
+.action-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.3s;
+}
+
+.action-btn:hover {
+    background: rgba(77, 166, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.action-btn-text {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 6px 12px;
+    height: 30px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 0.75em;
+    transition: all 0.3s;
+    min-width: 55px;
+}
+
+.action-btn-text:hover {
+    background: rgba(77, 166, 255, 0.3);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.sliders-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+@media (max-width: 768px) {
+    .sliders-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.slider-group {
+    margin-bottom: 0;
+}
+
+.slider-group label {
+    display: block;
+    margin-bottom: 2px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.7em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.slider-group input[type="range"] {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+    border-radius: 2px;
+    -webkit-appearance: none;
+}
+
+.slider-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    background: #4da6ff;
+    cursor: pointer;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(77, 166, 255, 0.5);
+}
+
+.slider-group input[type="range"]::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: #4da6ff;
+    cursor: pointer;
+    border-radius: 50%;
+    border: none;
+    box-shadow: 0 0 8px rgba(77, 166, 255, 0.5);
+}
+
+/* Stats Tab */
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.85em;
+}
+
+.stat-label {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.stat-value {
+    color: #4da6ff;
+    font-weight: bold;
+}
+
+/* Fullscreen mode adjustments */
+body:fullscreen .header,
+body:-webkit-full-screen .header,
+body:-moz-full-screen .header {
+    background: rgba(13, 27, 42, 0.8);
+    padding: 10px 20px;
+}
+
+/* Scrollbar styling */
+.control-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.control-panel::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.control-panel::-webkit-scrollbar-thumb {
+    background: rgba(77, 166, 255, 0.5);
+    border-radius: 4px;
+}
+
+.control-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(77, 166, 255, 0.7);
+}
