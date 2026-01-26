@@ -190,8 +190,8 @@ canvas {
 }
 
 .toggle-btn {
-    position: absolute;
-    top: -40px;
+    position: fixed;
+    bottom: 15px;
     right: 15px;
     background: rgba(26, 35, 50, 0.95);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -203,6 +203,7 @@ canvas {
     font-size: 1.1em;
     transition: all 0.3s;
     backdrop-filter: blur(10px);
+    z-index: 250;
 }
 
 .toggle-btn:hover {
