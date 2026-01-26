@@ -39,6 +39,7 @@
                     <li><strong>Earn money</strong> from:
                         <ul>
                             <li>Wall bounces - every time a node hits a wall</li>
+                            <li>Node collisions - when nodes bounce off each other</li>
                             <li>Edge connections - passive income per second</li>
                         </ul>
                     </li>
@@ -66,11 +67,12 @@
             <h3>Gameplay</h3>
             <ul>
                 <li><strong>Click</strong> to place nodes (up to your limit)</li>
-                <li><strong>Earn money</strong> from wall bounces and edge connections</li>
+                <li><strong>Earn money</strong> from wall bounces, node collisions, and edge connections</li>
                 <li><strong>Upgrades tab</strong> - spend money on improvements</li>
                 <li><strong>Nodes tab</strong> - select which node type to place</li>
                 <li><strong>Prestige tab</strong> - reset for Dark Matter and permanent bonuses</li>
                 <li><strong>Achievements</strong> - complete goals for rewards</li>
+                <li><strong>Controls tab</strong> - adjust visual effects (trail length)</li>
             </ul>
             <h3>Node Types</h3>
             <ul>
@@ -326,42 +328,20 @@
 
             <!-- Controls Tab -->
             <div id="controlsTab" class="tab-content">
+                <p style="font-size: 0.85em; color: rgba(255,255,255,0.7); margin-bottom: 15px;">
+                    Visual effects (don't affect gameplay):
+                </p>
                 <div class="sliders-grid">
-                    <div class="slider-group">
-                        <label>
-                            Connect: <span id="connectivityValue">150</span>
-                        </label>
-                        <input type="range" id="connectivity" min="50" max="300" value="150" step="25">
-                    </div>
-
-                    <div class="slider-group">
-                        <label>
-                            Speed: <span id="speedValue">1.0</span>
-                        </label>
-                        <input type="range" id="speed" min="0" max="3.0" value="1.0" step="0.5">
-                    </div>
-
-                    <div class="slider-group">
-                        <label>
-                            Size: <span id="sizeValue">4</span>
-                        </label>
-                        <input type="range" id="size" min="2" max="10" value="4" step="2">
-                    </div>
-
                     <div class="slider-group">
                         <label>
                             Trail: <span id="trailValue">0</span>
                         </label>
                         <input type="range" id="trail" min="0" max="100" value="0" step="10">
                     </div>
-
-                    <div class="slider-group">
-                        <label>
-                            Gravity: <span id="gravityValue">0.5</span>
-                        </label>
-                        <input type="range" id="gravity" min="0" max="2.0" value="0.5" step="0.25">
-                    </div>
                 </div>
+                <p style="font-size: 0.8em; color: rgba(255,255,255,0.5); margin-top: 15px;">
+                    Game mechanics like speed, connectivity, and node size are controlled by upgrades in the Upgrades tab.
+                </p>
             </div>
 
             <!-- Stats Tab -->

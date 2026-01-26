@@ -10,14 +10,10 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-// Configuration
+// Configuration (for non-gameplay visuals)
 const config = {
     nodeCount: 0,
-    connectivity: 150,
-    speed: 1.0,
-    nodeSize: 4,
     trailLength: 0,
-    mouseGravity: 0.5,
     paused: false
 };
 
@@ -209,10 +205,14 @@ class Node {
         this.justBouncedX = false;
         this.justBouncedY = false;
         this.justBouncedZ = false;
+        this.hasCollidedThisFrame = false;
     }
 
     update() {
         if (config.paused) return;
+
+        // Reset collision flag
+        this.hasCollidedThisFrame = false;
 
         // Update shooting star state
         if (this.isShootingStar) {
@@ -246,19 +246,6 @@ class Node {
                     }
                 }
             });
-        }
-
-        // Mouse gravity
-        if (mouse.active && config.mouseGravity > 0) {
-            const dx = mouse.x - this.x;
-            const dy = mouse.y - this.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist < 300) {
-                const force = (config.mouseGravity * 0.1) / (dist + 1);
-                this.vx += dx * force;
-                this.vy += dy * force;
-            }
         }
 
         // Update position
@@ -308,6 +295,40 @@ class Node {
             earnMoney(bounceIncome, this.x, this.y, this.type === 'golden');
             gameState.totalBounces++;
         }
+
+        // Node-to-node collision detection
+        nodes.forEach(other => {
+            if (other === this) return;
+
+            const dx = other.x - this.x;
+            const dy = other.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const minDist = getNodeSize() * 2;
+
+            if (dist < minDist && dist > 0) {
+                // Collision detected - bounce nodes apart
+                const angle = Math.atan2(dy, dx);
+                const targetX = this.x + Math.cos(angle) * minDist;
+                const targetY = this.y + Math.sin(angle) * minDist;
+
+                const ax = (targetX - other.x) * 0.1;
+                const ay = (targetY - other.y) * 0.1;
+
+                this.vx -= ax;
+                this.vy -= ay;
+                other.vx += ax;
+                other.vy += ay;
+
+                // Generate small income from node collision
+                if (!this.hasCollidedThisFrame && !other.hasCollidedThisFrame) {
+                    const collisionIncome = Math.floor(getBounceIncome() * 0.5) * (this.type === 'golden' ? 2 : 1);
+                    if (collisionIncome > 0) {
+                        earnMoney(collisionIncome, (this.x + other.x) / 2, (this.y + other.y) / 2, this.type === 'golden');
+                    }
+                    this.hasCollidedThisFrame = true;
+                }
+            }
+        });
 
         // Apply slight damping
         this.vx *= 0.99;
@@ -710,7 +731,7 @@ function getHoveredNode() {
         const dy = mouse.y - node.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < config.nodeSize * 3) {
+        if (dist < getNodeSize() * 3) {
             return node;
         }
     }
@@ -793,33 +814,62 @@ function drawEdges(hoveredNode) {
     const timeSinceLastEdgeIncome = now - gameState.lastEdgeIncomeTime;
     if (timeSinceLastEdgeIncome >= 1000 && edgeCount > 0) {
         const edgeIncomePerEdge = getEdgeIncomePerSecond();
-        const totalEdgeIncome = edgeIncomePerEdge * edgeCount;
 
-        // Count golden nodes for 2x multiplier
-        nodes.forEach(node => {
-            if (node.type === 'golden' && node.connections.length > 0) {
-                const goldenBonus = edgeIncomePerEdge * node.connections.length;
-                earnMoney(goldenBonus, node.x, node.y, true);
-            }
+        // Calculate income with golden multipliers
+        // Each edge generates base income, golden nodes multiply their edges by 2x
+        let totalIncome = 0;
+        let goldenIncome = 0;
+
+        // Count edges and apply golden multiplier correctly
+        const processedEdges = new Set();
+        nodes.forEach(nodeA => {
+            nodeA.connections.forEach(nodeB => {
+                // Avoid counting the same edge twice
+                const edgeKey = nodeA.id < nodeB.id ? `${nodeA.id}-${nodeB.id}` : `${nodeB.id}-${nodeA.id}`;
+                if (processedEdges.has(edgeKey)) return;
+                processedEdges.add(edgeKey);
+
+                // Base income for this edge
+                let edgeIncome = edgeIncomePerEdge;
+
+                // Apply golden multiplier (2x if either node is golden)
+                const isGoldenEdge = nodeA.type === 'golden' || nodeB.type === 'golden';
+                if (isGoldenEdge) {
+                    edgeIncome *= 2;
+                    goldenIncome += edgeIncomePerEdge; // Track golden portion
+                } else {
+                    totalIncome += edgeIncomePerEdge;
+                }
+            });
         });
 
-        // Base edge income
-        if (totalEdgeIncome > 0) {
-            earnMoney(totalEdgeIncome, canvas.width / 2, 50);
+        // Display income with appropriate popup
+        if (totalIncome > 0) {
+            earnMoney(totalIncome, canvas.width / 2, 50, false);
+        }
+        if (goldenIncome > 0) {
+            // Show golden income separately for visual feedback
+            earnMoney(goldenIncome, canvas.width / 2, 50, true);
         }
 
         gameState.lastEdgeIncomeTime = now;
     }
 
-    // Calculate money per second
+    // Calculate money per second for display
     const edgeIncomePerEdge = getEdgeIncomePerSecond();
-    let totalMPS = edgeIncomePerEdge * edgeCount;
+    let totalMPS = 0;
 
-    // Add golden node bonus
-    nodes.forEach(node => {
-        if (node.type === 'golden' && node.connections.length > 0) {
-            totalMPS += edgeIncomePerEdge * node.connections.length;
-        }
+    // Count edges with golden multiplier
+    const processedEdges = new Set();
+    nodes.forEach(nodeA => {
+        nodeA.connections.forEach(nodeB => {
+            const edgeKey = nodeA.id < nodeB.id ? `${nodeA.id}-${nodeB.id}` : `${nodeB.id}-${nodeA.id}`;
+            if (processedEdges.has(edgeKey)) return;
+            processedEdges.add(edgeKey);
+
+            const isGoldenEdge = nodeA.type === 'golden' || nodeB.type === 'golden';
+            totalMPS += edgeIncomePerEdge * (isGoldenEdge ? 2 : 1);
+        });
     });
 
     gameState.moneyPerSecond = totalMPS;
@@ -1143,13 +1193,9 @@ tabButtons.forEach(btn => {
     };
 });
 
-// Sliders
+// Sliders (visual only, don't affect gameplay)
 const sliders = [
-    { id: 'connectivity', config: 'connectivity', value: 'connectivityValue' },
-    { id: 'speed', config: 'speed', value: 'speedValue' },
-    { id: 'size', config: 'nodeSize', value: 'sizeValue' },
-    { id: 'trail', config: 'trailLength', value: 'trailValue' },
-    { id: 'gravity', config: 'mouseGravity', value: 'gravityValue' }
+    { id: 'trail', config: 'trailLength', value: 'trailValue' }
 ];
 
 sliders.forEach(slider => {
