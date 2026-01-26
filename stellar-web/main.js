@@ -20,7 +20,7 @@ const config = {
 
 // Game State
 const gameState = {
-    money: 0,
+    money: 100,
     moneyPerSecond: 0,
     darkMatter: 0,
     totalMoneyEarned: 0,
@@ -69,23 +69,23 @@ const gameState = {
 
 // Upgrade costs and formulas (rebalanced for faster progression)
 const upgradeFormulas = {
-    nodeLimit: (level) => Math.floor(50 * Math.pow(1.4, level - 3)),
-    bounceValue: (level) => Math.floor(30 * Math.pow(1.6, level - 1)),
-    edgeValue: (level) => Math.floor(40 * Math.pow(1.6, level - 1)),
-    speed: (level) => Math.floor(25 * Math.pow(1.5, level - 1)),
-    connectivity: (level) => Math.floor(35 * Math.pow(1.5, level - 1)),
-    nodeSize: (level) => Math.floor(30 * Math.pow(1.4, level - 1))
+    nodeLimit: (level) => Math.floor(30 * Math.pow(1.35, level - 3)),
+    bounceValue: (level) => Math.floor(20 * Math.pow(1.5, level - 1)),
+    edgeValue: (level) => Math.floor(25 * Math.pow(1.5, level - 1)),
+    speed: (level) => Math.floor(15 * Math.pow(1.4, level - 1)),
+    connectivity: (level) => Math.floor(20 * Math.pow(1.4, level - 1)),
+    nodeSize: (level) => Math.floor(18 * Math.pow(1.35, level - 1))
 };
 
 // Get actual values from upgrade levels
 function getBounceIncome() {
-    const base = gameState.upgrades.bounceValue * 5; // $5 per level
+    const base = gameState.upgrades.bounceValue * 10; // $10 per level
     const multiplier = 1 + (gameState.darkMatterUpgrades.incomeMultiplier * 0.1);
     return Math.round(base * multiplier);
 }
 
 function getEdgeIncomePerSecond() {
-    const base = gameState.upgrades.edgeValue * 1.0; // $1 per edge per second per level
+    const base = gameState.upgrades.edgeValue * 3.0; // $3 per edge per second per level
     const multiplier = 1 + (gameState.darkMatterUpgrades.incomeMultiplier * 0.1);
     return base * multiplier;
 }
@@ -538,7 +538,7 @@ function prestige() {
     gameState.totalPrestiges++;
 
     // Reset run-specific progress
-    gameState.money = 0;
+    gameState.money = 100;
     gameState.totalMoneyEarned = 0;
     gameState.totalBounces = 0;
     gameState.upgrades = {
