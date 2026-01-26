@@ -14,6 +14,7 @@ window.addEventListener('resize', resizeCanvas);
 const config = {
     nodeCount: 0,
     trailLength: 0,
+    nodeHue: 200, // Blue hue for basic nodes (0-360)
     paused: false
 };
 
@@ -30,8 +31,8 @@ const gameState = {
     // Upgrades (levels)
     upgrades: {
         nodeLimit: 3,          // Starting with 3 node limit
-        bounceValue: 1,        // Level 1 = $1 per bounce
-        edgeValue: 1,          // Level 1 = $0.1 per edge per second
+        bounceValue: 1,        // Level 1 = $5 per bounce
+        edgeValue: 1,          // Level 1 = $1 per edge per second
         speed: 1,              // Level 1 = 1.0x speed
         connectivity: 1,       // Level 1 = 150 radius
         nodeSize: 1            // Level 1 = 4 size
@@ -66,25 +67,25 @@ const gameState = {
     lastEdgeIncomeTime: Date.now()
 };
 
-// Upgrade costs and formulas
+// Upgrade costs and formulas (rebalanced for faster progression)
 const upgradeFormulas = {
-    nodeLimit: (level) => Math.floor(100 * Math.pow(1.5, level - 3)),
-    bounceValue: (level) => Math.floor(50 * Math.pow(1.8, level - 1)),
-    edgeValue: (level) => Math.floor(75 * Math.pow(1.8, level - 1)),
-    speed: (level) => Math.floor(40 * Math.pow(1.7, level - 1)),
-    connectivity: (level) => Math.floor(60 * Math.pow(1.6, level - 1)),
-    nodeSize: (level) => Math.floor(45 * Math.pow(1.5, level - 1))
+    nodeLimit: (level) => Math.floor(50 * Math.pow(1.4, level - 3)),
+    bounceValue: (level) => Math.floor(30 * Math.pow(1.6, level - 1)),
+    edgeValue: (level) => Math.floor(40 * Math.pow(1.6, level - 1)),
+    speed: (level) => Math.floor(25 * Math.pow(1.5, level - 1)),
+    connectivity: (level) => Math.floor(35 * Math.pow(1.5, level - 1)),
+    nodeSize: (level) => Math.floor(30 * Math.pow(1.4, level - 1))
 };
 
 // Get actual values from upgrade levels
 function getBounceIncome() {
-    const base = gameState.upgrades.bounceValue;
+    const base = gameState.upgrades.bounceValue * 5; // $5 per level
     const multiplier = 1 + (gameState.darkMatterUpgrades.incomeMultiplier * 0.1);
     return Math.round(base * multiplier);
 }
 
 function getEdgeIncomePerSecond() {
-    const base = gameState.upgrades.edgeValue * 0.1;
+    const base = gameState.upgrades.edgeValue * 1.0; // $1 per edge per second per level
     const multiplier = 1 + (gameState.darkMatterUpgrades.incomeMultiplier * 0.1);
     return base * multiplier;
 }
@@ -175,6 +176,35 @@ function drawStar(ctx, x, y, radius, points = 5, innerRadius = null) {
         }
     }
     ctx.closePath();
+}
+
+// Helper function to convert HSL to RGB
+function hslToRgb(h, s, l) {
+    h = h / 360;
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs((h * 6) % 2 - 1));
+    const m = l - c / 2;
+
+    let r, g, b;
+    if (h < 1/6) {
+        r = c; g = x; b = 0;
+    } else if (h < 2/6) {
+        r = x; g = c; b = 0;
+    } else if (h < 3/6) {
+        r = 0; g = c; b = x;
+    } else if (h < 4/6) {
+        r = 0; g = x; b = c;
+    } else if (h < 5/6) {
+        r = x; g = 0; b = c;
+    } else {
+        r = c; g = 0; b = x;
+    }
+
+    return [
+        Math.round((r + m) * 255),
+        Math.round((g + m) * 255),
+        Math.round((b + m) * 255)
+    ];
 }
 
 // Node class
@@ -370,8 +400,13 @@ class Node {
                 glowColor = [255, 215, 0];
                 break;
             default:
-                nodeColor = [255, 255, 255]; // White
-                glowColor = [200, 220, 255]; // Soft blue
+                // Use HSL color from config for basic nodes
+                const hue = config.nodeHue;
+                const hslColor = `hsl(${hue}, 80%, 70%)`;
+                const hslGlow = `hsl(${hue}, 60%, 80%)`;
+                // Convert to RGB for compatibility with existing code
+                nodeColor = hslToRgb(hue, 0.8, 0.7);
+                glowColor = hslToRgb(hue, 0.6, 0.8);
         }
 
         // Draw trail
@@ -1214,6 +1249,32 @@ sliders.forEach(slider => {
         };
     }
 });
+
+// Color slider (special handler)
+const colorSlider = document.getElementById('nodeColor');
+const colorValue = document.getElementById('colorValue');
+if (colorSlider && colorValue) {
+    const getColorName = (hue) => {
+        if (hue < 30) return 'Red';
+        if (hue < 60) return 'Orange';
+        if (hue < 90) return 'Yellow';
+        if (hue < 150) return 'Green';
+        if (hue < 210) return 'Cyan';
+        if (hue < 270) return 'Blue';
+        if (hue < 330) return 'Purple';
+        return 'Red';
+    };
+
+    colorSlider.oninput = () => {
+        const hue = parseInt(colorSlider.value);
+        config.nodeHue = hue;
+        colorValue.textContent = getColorName(hue);
+        colorValue.style.color = `hsl(${hue}, 80%, 70%)`;
+    };
+
+    // Set initial color
+    colorValue.style.color = `hsl(${config.nodeHue}, 80%, 70%)`;
+}
 
 // Pause button
 const pauseBtn = document.getElementById('pauseBtn');
