@@ -85,6 +85,18 @@ canvas {
     font-size: 1.2em;
 }
 
+.modal-content h3 {
+    margin: 15px 0 8px 0;
+    color: #7ab8ff;
+    font-size: 1em;
+}
+
+.modal-content p {
+    margin-bottom: 15px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+}
+
 .modal-content ul {
     list-style: none;
     line-height: 1.6;
@@ -92,6 +104,54 @@ canvas {
 
 .modal-content li {
     margin-bottom: 5px;
+}
+
+.modal-content.welcome {
+    max-width: 500px;
+    padding: 20px;
+}
+
+.instructions {
+    text-align: left;
+    margin: 20px 0;
+}
+
+.instructions ul {
+    margin-left: 0;
+    padding-left: 10px;
+}
+
+.instructions ul ul {
+    margin-left: 20px;
+    margin-top: 5px;
+    font-size: 0.95em;
+}
+
+.instructions li::before {
+    content: "• ";
+    color: #4da6ff;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.start-button {
+    background: linear-gradient(135deg, #4da6ff, #3d85cc);
+    border: none;
+    color: white;
+    padding: 12px 30px;
+    font-size: 1em;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(77, 166, 255, 0.3);
+}
+
+.start-button:hover {
+    background: linear-gradient(135deg, #5db6ff, #4d96dd);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(77, 166, 255, 0.4);
 }
 
 .close {

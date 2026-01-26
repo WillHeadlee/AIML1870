@@ -123,13 +123,31 @@ class Node {
         this.y += this.vy * speedMultiplier;
         this.z += this.vz * speedMultiplier;
 
-        // Wrap around edges
-        if (this.x < 0) this.x = canvas.width;
-        if (this.x > canvas.width) this.x = 0;
-        if (this.y < 0) this.y = canvas.height;
-        if (this.y > canvas.height) this.y = 0;
-        if (this.z < -100) this.z = 100;
-        if (this.z > 100) this.z = -100;
+        // Bounce off edges
+        if (this.x < 0) {
+            this.x = 0;
+            this.vx = Math.abs(this.vx);
+        }
+        if (this.x > canvas.width) {
+            this.x = canvas.width;
+            this.vx = -Math.abs(this.vx);
+        }
+        if (this.y < 0) {
+            this.y = 0;
+            this.vy = Math.abs(this.vy);
+        }
+        if (this.y > canvas.height) {
+            this.y = canvas.height;
+            this.vy = -Math.abs(this.vy);
+        }
+        if (this.z < -100) {
+            this.z = -100;
+            this.vz = Math.abs(this.vz);
+        }
+        if (this.z > 100) {
+            this.z = 100;
+            this.vz = -Math.abs(this.vz);
+        }
 
         // Apply slight damping
         this.vx *= 0.99;
@@ -448,6 +466,14 @@ function updateStatsDisplay() {
 
 // UI Controls
 
+// Welcome modal
+const welcomeModal = document.getElementById('welcomeModal');
+const startBtn = document.getElementById('startBtn');
+
+startBtn.onclick = () => {
+    welcomeModal.style.display = 'none';
+};
+
 // Help modal
 const helpModal = document.getElementById('helpModal');
 const helpBtn = document.getElementById('helpBtn');
@@ -458,6 +484,9 @@ closeBtn.onclick = () => helpModal.style.display = 'none';
 window.onclick = (e) => {
     if (e.target === helpModal) {
         helpModal.style.display = 'none';
+    }
+    if (e.target === welcomeModal) {
+        welcomeModal.style.display = 'none';
     }
 };
 

@@ -16,6 +16,36 @@
 
     <canvas id="canvas"></canvas>
 
+    <!-- Welcome Modal -->
+    <div id="welcomeModal" class="modal" style="display: block;">
+        <div class="modal-content welcome">
+            <h2>Welcome to Stellar Web</h2>
+            <p>Build your own network of stars in space!</p>
+            <div class="instructions">
+                <h3>Getting Started:</h3>
+                <ul>
+                    <li><strong>Click anywhere</strong> on the canvas to spawn star nodes</li>
+                    <li><strong>Use the sliders</strong> (gear icon ⚙️) to adjust:
+                        <ul>
+                            <li>Node count, connectivity, speed, size</li>
+                            <li>Trail effects and mouse gravity</li>
+                        </ul>
+                    </li>
+                    <li><strong>Move your mouse</strong> to attract nearby stars</li>
+                    <li><strong>Hover over stars</strong> to see their connections</li>
+                    <li><strong>Watch</strong> as stars bounce off edges and form networks</li>
+                </ul>
+                <h3>Tips:</h3>
+                <ul>
+                    <li>Start by clicking to create 5-10 stars</li>
+                    <li>Adjust connectivity to see different patterns</li>
+                    <li>Try the Stats tab to see network metrics</li>
+                </ul>
+            </div>
+            <button id="startBtn" class="start-button">Start Creating</button>
+        </div>
+    </div>
+
     <!-- Help Modal -->
     <div id="helpModal" class="modal">
         <div class="modal-content">
