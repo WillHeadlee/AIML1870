@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starfield Particle Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Press Start 2P', monospace;
+            overflow: hidden;
+            background: #000000;
+            color: #00ffff;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        #starCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .scanlines {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .scanlines::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                transparent 0px,
+                transparent 2px,
+                rgba(0, 0, 0, 0.2) 2px,
+                rgba(0, 0, 0, 0.2) 4px
+            );
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 18, 0.95);
+            border-top: 3px solid #00ffff;
+            box-shadow: 0 -5px 30px rgba(0, 255, 255, 0.3);
+            padding: 20px;
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+
+        .control-panel.collapsed {
+            transform: translateY(calc(100% - 40px));
+        }
+
+        .panel-header {
+            text-align: center;
+            font-size: 14px;
+            color: #00ffff;
+            text-shadow: 0 0 5px #0ff, 0 0 10px #0ff;
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+        }
+
+        .toggle-panel {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 18, 0.95);
+            border: 2px solid #00ffff;
+            padding: 5px 15px;
+            cursor: pointer;
+            font-size: 8px;
+            color: #00ffff;
+            text-shadow: 0 0 5px #0ff;
+            transition: all 0.2s;
+        }
+
+        .toggle-panel:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 10px #0ff;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            max-width: 1200px;
+            margin: 0 auto 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-label {
+            font-size: 10px;
+            color: #00ffff;
+            text-shadow: 0 0 3px #0ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-value {
+            color: #ff00ff;
+            text-shadow: 0 0 3px #f0f;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, #00ffff 0%, rgba(0, 255, 255, 0.3) 100%);
+            border: 2px solid #00ffff;
+            outline: none;
+            -webkit-appearance: none;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #ff00ff;
+            border: 2px solid #00ffff;
+            cursor: pointer;
+            box-shadow: 0 0 10px #f0f;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #ff00ff;
+            border: 2px solid #00ffff;
+            cursor: pointer;
+            box-shadow: 0 0 10px #f0f;
+        }
+
+        select {
+            background: #0a0a12;
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            padding: 8px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            text-shadow: 0 0 3px #0ff;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select:hover {
+            background: rgba(0, 255, 255, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .arcade-button {
+            background: linear-gradient(180deg, #00ffff 0%, #0088aa 100%);
+            border: 3px solid #00ffff;
+            color: #000;
+            padding: 12px 25px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            text-shadow: none;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+            transition: all 0.1s;
+            position: relative;
+        }
+
+        .arcade-button:hover {
+            background: linear-gradient(180deg, #00ffff 0%, #00aacc 100%);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.9), inset 0 2px 0 rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .arcade-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .arcade-button.flash {
+            animation: buttonFlash 0.3s ease;
+        }
+
+        @keyframes buttonFlash {
+            0%, 100% { background: linear-gradient(180deg, #00ffff 0%, #0088aa 100%); }
+            50% { background: linear-gradient(180deg, #ff00ff 0%, #aa0088 100%); }
+        }
+
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .panel-header {
+                font-size: 10px;
+            }
+
+            .control-label {
+                font-size: 8px;
+            }
+
+            .arcade-button {
+                font-size: 8px;
+                padding: 10px 20px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .scanlines::after {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="starCanvas"></canvas>
+    <div class="scanlines"></div>
+
+    <div class="control-panel" id="controlPanel">
+        <div class="toggle-panel" id="togglePanel">▼ CONTROLS ▼</div>
+
+        <div class="panel-header">═══ STARFIELD CONTROL PANEL ═══</div>
+
+        <div class="controls-grid">
+            <div class="control-group">
+                <label class="control-label">
+                    STARS
+                    <span class="control-value" id="starsValue">500</span>
+                </label>
+                <input type="range" id="starsSlider" min="50" max="2000" value="500" step="10">
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">
+                    SIZE
+                    <span class="control-value" id="sizeValue">3</span>
+                </label>
+                <input type="range" id="sizeSlider" min="1" max="10" value="3" step="1">
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">
+                    COLOR
+                    <span class="control-value" id="colorValue">CYAN</span>
+                </label>
+                <select id="colorSelect">
+                    <option value="180">CYAN</option>
+                    <option value="300">MAGENTA</option>
+                    <option value="120">GREEN</option>
+                    <option value="45">AMBER</option>
+                    <option value="0">WHITE</option>
+                    <option value="350">RED</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">
+                    SPEED
+                    <span class="control-value" id="speedValue">5.0</span>
+                </label>
+                <input type="range" id="speedSlider" min="0.5" max="20" value="5" step="0.5">
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">
+                    TRAIL
+                    <span class="control-value" id="trailValue">0</span>
+                </label>
+                <input type="range" id="trailSlider" min="0" max="50" value="0" step="1">
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">
+                    SHAPE
+                    <span class="control-value" id="shapeValue">POINT</span>
+                </label>
+                <select id="shapeSelect">
+                    <option value="point">POINT</option>
+                    <option value="square">SQUARE</option>
+                    <option value="cross">CROSS</option>
+                    <option value="diamond">DIAMOND</option>
+                    <option value="star">STAR</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">
+                    REPEL
+                    <span class="control-value" id="repelValue">0</span>
+                </label>
+                <input type="range" id="repelSlider" min="0" max="200" value="0" step="10">
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">
+                    MODE
+                    <span class="control-value" id="modeValue">WARP</span>
+                </label>
+                <select id="modeSelect">
+                    <option value="warp">WARP</option>
+                    <option value="drift">DRIFT</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="arcade-button" id="randomizeBtn">RANDOMIZE</button>
+            <button class="arcade-button" id="fullscreenBtn">FULLSCREEN</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Settings
+        let settings = {
+            starCount: 500,
+            baseSize: 3,
+            colorHue: 180,
+            speed: 5,
+            trailLength: 0,
+            shape: 'point',
+            repelRadius: 0,
+            mode: 'warp'
+        };
+
+        let centerX = 0;
+        let centerY = 0;
+        let stars = [];
+        let mouse = { x: null, y: null };
+
+        // Spaceship object
+        let spaceship = {
+            x: 100,
+            y: 100,
+            targetX: 100,
+            targetY: 100,
+            speed: 0.02,
+            angle: 0
+        };
+
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            centerX = canvas.width / 2;
+            centerY = canvas.height / 2;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Color names
+        const colorNames = {
+            180: 'CYAN',
+            300: 'MAGENTA',
+            120: 'GREEN',
+            45: 'AMBER',
+            0: 'WHITE',
+            350: 'RED'
+        };
+
+        // Star class
+        class Star {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                if (settings.mode === 'warp') {
+                    // Position stars in 3D space centered around the screen center
+                    // Start them far from camera to avoid "spray zone"
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = Math.random() * Math.max(canvas.width, canvas.height) * 1.5 + 100;
+                    this.x = Math.cos(angle) * radius;
+                    this.y = Math.sin(angle) * radius;
+                    this.z = Math.random() * 700 + 300; // Start further back (300-1000 instead of 200-1000)
+
+                    // Calculate initial screen position
+                    const focalLength = 200;
+                    this.screenX = (this.x / this.z) * focalLength + centerX;
+                    this.screenY = (this.y / this.z) * focalLength + centerY;
+                } else {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.z = 1;
+                    this.screenX = this.x;
+                    this.screenY = this.y;
+                }
+                this.prevX = this.screenX;
+                this.prevY = this.screenY;
+            }
+
+            update() {
+                if (settings.mode === 'warp') {
+                    // Store previous screen position BEFORE updating
+                    this.prevX = this.screenX;
+                    this.prevY = this.screenY;
+
+                    // Warp mode - fly toward viewer
+                    this.z -= settings.speed;
+
+                    // Reset star if it gets too close to camera (increased from 10 to 50)
+                    if (this.z <= 50) {
+                        this.reset();
+                        return;
+                    }
+
+                    // Project to 2D with stronger tunnel effect
+                    const focalLength = 200;
+                    this.screenX = (this.x / this.z) * focalLength + centerX;
+                    this.screenY = (this.y / this.z) * focalLength + centerY;
+                    this.size = settings.baseSize / this.z * 100;
+                } else {
+                    // Store previous position for drift mode
+                    this.prevX = this.screenX;
+                    this.prevY = this.screenY;
+
+                    // Drift mode - move in 2D
+                    this.screenX = this.x;
+                    this.screenY = this.y;
+                    this.size = settings.baseSize;
+
+                    this.x += Math.cos(0) * settings.speed;
+                    this.y += Math.sin(0) * settings.speed;
+
+                    // Wrap around
+                    if (this.x > canvas.width + 50) this.x = -50;
+                    if (this.x < -50) this.x = canvas.width + 50;
+                    if (this.y > canvas.height + 50) this.y = -50;
+                    if (this.y < -50) this.y = canvas.height + 50;
+                }
+
+                // Mouse repel
+                if (settings.repelRadius > 0 && mouse.x !== null) {
+                    const dx = this.screenX - mouse.x;
+                    const dy = this.screenY - mouse.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < settings.repelRadius && distance > 0) {
+                        const force = (settings.repelRadius - distance) / settings.repelRadius;
+                        const pushX = (dx / distance) * force * 10;
+                        const pushY = (dy / distance) * force * 10;
+
+                        if (settings.mode === 'warp') {
+                            this.x += pushX * this.z;
+                            this.y += pushY * this.z;
+                        } else {
+                            this.x += pushX;
+                            this.y += pushY;
+                            this.screenX += pushX;
+                            this.screenY += pushY;
+                        }
+                    }
+                }
+            }
+
+            draw() {
+                if (this.screenX < -50 || this.screenX > canvas.width + 50 ||
+                    this.screenY < -50 || this.screenY > canvas.height + 50) {
+                    return;
+                }
+
+                const hue = settings.colorHue;
+                const sat = hue === 0 ? 0 : 100;
+                const light = hue === 0 ? 100 : 50;
+                const color = `hsl(${hue}, ${sat}%, ${light}%)`;
+
+                ctx.fillStyle = color;
+                ctx.strokeStyle = color;
+
+                // Draw trail with proper scaling
+                if (settings.trailLength > 0 && this.prevX !== undefined && this.prevY !== undefined) {
+                    const dx = this.screenX - this.prevX;
+                    const dy = this.screenY - this.prevY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance > 0.5) {
+                        const trailScale = settings.trailLength / 10;
+                        const trailX = this.prevX;
+                        const trailY = this.prevY;
+
+                        ctx.beginPath();
+                        ctx.moveTo(trailX, trailY);
+                        ctx.lineTo(this.screenX, this.screenY);
+                        ctx.lineWidth = Math.max(0.5, this.size * 0.3);
+                        ctx.globalAlpha = 0.4 + (settings.trailLength / 50 * 0.4);
+                        ctx.stroke();
+                        ctx.globalAlpha = 1;
+                    }
+                }
+
+                // Draw shape
+                const size = Math.max(1, this.size);
+
+                switch (settings.shape) {
+                    case 'point':
+                        ctx.fillRect(this.screenX - size/2, this.screenY - size/2, size, size);
+                        break;
+
+                    case 'square':
+                        ctx.fillRect(this.screenX - size, this.screenY - size, size * 2, size * 2);
+                        break;
+
+                    case 'cross':
+                        ctx.fillRect(this.screenX - size, this.screenY - size/3, size * 2, size * 2/3);
+                        ctx.fillRect(this.screenX - size/3, this.screenY - size, size * 2/3, size * 2);
+                        break;
+
+                    case 'diamond':
+                        ctx.save();
+                        ctx.translate(this.screenX, this.screenY);
+                        ctx.rotate(Math.PI / 4);
+                        ctx.fillRect(-size, -size, size * 2, size * 2);
+                        ctx.restore();
+                        break;
+
+                    case 'star':
+                        ctx.save();
+                        ctx.translate(this.screenX, this.screenY);
+                        ctx.fillRect(-size, -size/3, size * 2, size * 2/3);
+                        ctx.fillRect(-size/3, -size, size * 2/3, size * 2);
+                        ctx.rotate(Math.PI / 4);
+                        ctx.fillRect(-size * 0.7, -size/4, size * 1.4, size/2);
+                        ctx.fillRect(-size/4, -size * 0.7, size/2, size * 1.4);
+                        ctx.restore();
+                        break;
+                }
+            }
+        }
+
+        // Initialize stars
+        function initStars() {
+            stars = [];
+            for (let i = 0; i < settings.starCount; i++) {
+                stars.push(new Star());
+            }
+        }
+        initStars();
+
+        // Mouse tracking
+        canvas.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                mouse.x = e.touches[0].clientX;
+                mouse.y = e.touches[0].clientY;
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+
+        // Update spaceship
+        function updateSpaceship() {
+            // Move toward target
+            spaceship.x += (spaceship.targetX - spaceship.x) * spaceship.speed;
+            spaceship.y += (spaceship.targetY - spaceship.y) * spaceship.speed;
+
+            // Calculate angle to target
+            const dx = spaceship.targetX - spaceship.x;
+            const dy = spaceship.targetY - spaceship.y;
+            spaceship.angle = Math.atan2(dy, dx);
+
+            // Pick new target when close enough
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < 50) {
+                spaceship.targetX = Math.random() * (canvas.width - 100) + 50;
+                spaceship.targetY = Math.random() * (canvas.height - 100) + 50;
+            }
+        }
+
+        // Draw spaceship
+        function drawSpaceship() {
+            ctx.save();
+            ctx.translate(spaceship.x, spaceship.y);
+            ctx.rotate(spaceship.angle);
+
+            // Spaceship color based on current setting
+            const hue = settings.colorHue;
+            const color = `hsl(${hue}, 100%, 60%)`;
+            ctx.fillStyle = color;
+
+            // Main body (triangle pointing right)
+            ctx.fillRect(-8, -2, 12, 4);
+
+            // Nose
+            ctx.fillRect(4, -1, 4, 2);
+
+            // Wings
+            ctx.fillRect(-6, -4, 8, 2);
+            ctx.fillRect(-6, 2, 8, 2);
+
+            // Engine glow
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-10, -1, 2, 2);
+
+            // Add glow effect
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = color;
+            ctx.fillStyle = color;
+            ctx.fillRect(-8, -2, 12, 4);
+
+            ctx.restore();
+        }
+
+        // Animation loop
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            stars.forEach(star => {
+                star.update();
+                star.draw();
+            });
+
+            updateSpaceship();
+            drawSpaceship();
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // UI Controls
+        const starsSlider = document.getElementById('starsSlider');
+        const sizeSlider = document.getElementById('sizeSlider');
+        const colorSelect = document.getElementById('colorSelect');
+        const speedSlider = document.getElementById('speedSlider');
+        const trailSlider = document.getElementById('trailSlider');
+        const shapeSelect = document.getElementById('shapeSelect');
+        const repelSlider = document.getElementById('repelSlider');
+        const modeSelect = document.getElementById('modeSelect');
+
+        starsSlider.addEventListener('input', (e) => {
+            settings.starCount = parseInt(e.target.value);
+            document.getElementById('starsValue').textContent = settings.starCount;
+            initStars();
+        });
+
+        sizeSlider.addEventListener('input', (e) => {
+            settings.baseSize = parseInt(e.target.value);
+            document.getElementById('sizeValue').textContent = settings.baseSize;
+        });
+
+        colorSelect.addEventListener('change', (e) => {
+            settings.colorHue = parseInt(e.target.value);
+            document.getElementById('colorValue').textContent = colorNames[settings.colorHue];
+        });
+
+        speedSlider.addEventListener('input', (e) => {
+            settings.speed = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = settings.speed.toFixed(1);
+        });
+
+        trailSlider.addEventListener('input', (e) => {
+            settings.trailLength = parseInt(e.target.value);
+            document.getElementById('trailValue').textContent = settings.trailLength;
+        });
+
+        shapeSelect.addEventListener('change', (e) => {
+            settings.shape = e.target.value;
+            document.getElementById('shapeValue').textContent = e.target.value.toUpperCase();
+        });
+
+        repelSlider.addEventListener('input', (e) => {
+            settings.repelRadius = parseInt(e.target.value);
+            document.getElementById('repelValue').textContent = settings.repelRadius;
+        });
+
+        modeSelect.addEventListener('change', (e) => {
+            settings.mode = e.target.value;
+            document.getElementById('modeValue').textContent = e.target.value.toUpperCase();
+            initStars();
+        });
+
+        // Randomize button
+        document.getElementById('randomizeBtn').addEventListener('click', function() {
+            this.classList.add('flash');
+            setTimeout(() => this.classList.remove('flash'), 300);
+
+            settings.starCount = Math.floor(Math.random() * 1950) + 50;
+            settings.baseSize = Math.floor(Math.random() * 10) + 1;
+            settings.speed = (Math.random() * 19.5) + 0.5;
+            settings.trailLength = Math.floor(Math.random() * 51);
+            settings.repelRadius = Math.floor(Math.random() * 21) * 10;
+
+            const colorOptions = [180, 300, 120, 45, 0, 350];
+            settings.colorHue = colorOptions[Math.floor(Math.random() * colorOptions.length)];
+
+            const shapeOptions = ['point', 'square', 'cross', 'diamond', 'star'];
+            settings.shape = shapeOptions[Math.floor(Math.random() * shapeOptions.length)];
+
+            const modeOptions = ['warp', 'drift'];
+            settings.mode = modeOptions[Math.floor(Math.random() * modeOptions.length)];
+
+            // Update UI
+            starsSlider.value = settings.starCount;
+            sizeSlider.value = settings.baseSize;
+            speedSlider.value = settings.speed;
+            trailSlider.value = settings.trailLength;
+            repelSlider.value = settings.repelRadius;
+            colorSelect.value = settings.colorHue;
+            shapeSelect.value = settings.shape;
+            modeSelect.value = settings.mode;
+
+            document.getElementById('starsValue').textContent = settings.starCount;
+            document.getElementById('sizeValue').textContent = settings.baseSize;
+            document.getElementById('speedValue').textContent = settings.speed.toFixed(1);
+            document.getElementById('trailValue').textContent = settings.trailLength;
+            document.getElementById('repelValue').textContent = settings.repelRadius;
+            document.getElementById('colorValue').textContent = colorNames[settings.colorHue];
+            document.getElementById('shapeValue').textContent = settings.shape.toUpperCase();
+            document.getElementById('modeValue').textContent = settings.mode.toUpperCase();
+
+            initStars();
+        });
+
+        // Fullscreen button
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log('Fullscreen error:', err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        // Toggle panel
+        document.getElementById('togglePanel').addEventListener('click', () => {
+            const panel = document.getElementById('controlPanel');
+            const btn = document.getElementById('togglePanel');
+            panel.classList.toggle('collapsed');
+            btn.textContent = panel.classList.contains('collapsed') ? '▲ CONTROLS ▲' : '▼ CONTROLS ▼';
+        });
+    </script>
+</body>
+</html>
