@@ -1141,8 +1141,10 @@ function updateNodeTypeSelection() {
             selectMagnet.textContent = gameState.selectedNodeType === 'magnet' ? '✓ SELECTED' : 'SELECT';
             selectMagnet.className = gameState.selectedNodeType === 'magnet' ? 'node-type-selected' : 'node-type-select';
         } else {
-            selectMagnet.textContent = '🔒 20 ◈';
+            const canAfford = gameState.darkMatter >= 20;
+            selectMagnet.textContent = canAfford ? 'UNLOCK 20 ◈' : '🔒 20 ◈';
             selectMagnet.className = 'node-type-locked';
+            selectMagnet.style.opacity = canAfford ? '1' : '0.5';
         }
     }
 
@@ -1151,8 +1153,10 @@ function updateNodeTypeSelection() {
             selectGolden.textContent = gameState.selectedNodeType === 'golden' ? '✓ SELECTED' : 'SELECT';
             selectGolden.className = gameState.selectedNodeType === 'golden' ? 'node-type-selected' : 'node-type-select';
         } else {
-            selectGolden.textContent = '🔒 50 ◈';
+            const canAfford = gameState.darkMatter >= 50;
+            selectGolden.textContent = canAfford ? 'UNLOCK 50 ◈' : '🔒 50 ◈';
             selectGolden.className = 'node-type-locked';
+            selectGolden.style.opacity = canAfford ? '1' : '0.5';
         }
     }
 }

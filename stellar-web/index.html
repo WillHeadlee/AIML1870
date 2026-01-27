@@ -188,7 +188,7 @@
                         </div>
                         <div id="selectBasic" class="node-type-selected">✓ SELECTED</div>
                     </div>
-                    <div class="node-type-item" onclick="if(gameState.darkMatterUpgrades.magnetNodeUnlocked){gameState.selectedNodeType='magnet'; updateNodeTypeSelection();} else {showNotification('Unlock with Dark Matter!');}">
+                    <div class="node-type-item" onclick="if(gameState.darkMatterUpgrades.magnetNodeUnlocked){gameState.selectedNodeType='magnet'; updateNodeTypeSelection();} else {if(buyDarkMatterUpgrade('magnetNode')){gameState.selectedNodeType='magnet';}}">
                         <div class="node-type-preview" style="background: radial-gradient(circle, rgba(160,80,255,0.8), transparent);">⭐</div>
                         <div class="node-type-info">
                             <div class="node-type-name">Magnet Node</div>
@@ -196,7 +196,7 @@
                         </div>
                         <div id="selectMagnet" class="node-type-locked">🔒 20 ◈</div>
                     </div>
-                    <div class="node-type-item" onclick="if(gameState.darkMatterUpgrades.goldenNodeUnlocked){gameState.selectedNodeType='golden'; updateNodeTypeSelection();} else {showNotification('Unlock with Dark Matter!');}">
+                    <div class="node-type-item" onclick="if(gameState.darkMatterUpgrades.goldenNodeUnlocked){gameState.selectedNodeType='golden'; updateNodeTypeSelection();} else {if(buyDarkMatterUpgrade('goldenNode')){gameState.selectedNodeType='golden';}}">
                         <div class="node-type-preview" style="background: radial-gradient(circle, rgba(255,215,0,0.8), transparent);">⭐</div>
                         <div class="node-type-info">
                             <div class="node-type-name">Golden Node</div>
