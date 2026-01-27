@@ -412,7 +412,7 @@ class Node {
         // Draw trail
         if (this.trail.length > 1) {
             ctx.strokeStyle = `rgba(${nodeColor[0]}, ${nodeColor[1]}, ${nodeColor[2]}, 0.1)`;
-            ctx.lineWidth = 1;
+            ctx.lineWidth = size / 4; // Scale trail width with node size
             ctx.beginPath();
             ctx.moveTo(this.trail[0].x, this.trail[0].y);
             for (let i = 1; i < this.trail.length; i++) {
@@ -485,7 +485,7 @@ function initNodes() {
     nodes = [];
     Node.idCounter = 0;
     for (let i = 0; i < config.nodeCount; i++) {
-        nodes.push(new Node());
+        nodes.push(new Node(undefined, undefined, undefined, gameState.selectedNodeType));
     }
 }
 
