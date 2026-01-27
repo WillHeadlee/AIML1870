@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellar Web</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <div class="money-display">
+                <div id="moneyDisplay" class="money-amount">$100</div>
+                <div id="mpsDisplay" class="money-rate">+$0/s</div>
+            </div>
+        </div>
+        <div class="header-controls">
+            <button id="helpBtn" class="icon-btn" title="Help">?</button>
+            <div id="dmDisplay" class="dm-display">◈ 0</div>
+            <button id="fullscreenBtn" class="icon-btn" title="Fullscreen">⛶</button>
+        </div>
+    </div>
+
+    <div class="node-counter" id="nodeCountDisplay">
+        Nodes: 0/3
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <!-- Welcome Modal -->
+    <div id="welcomeModal" class="modal" style="display: block;">
+        <div class="modal-content welcome">
+            <h2>Welcome to Stellar Web: The Game</h2>
+            <p>Build your cosmic network and watch the money flow!</p>
+            <div class="instructions">
+                <h3>How to Play:</h3>
+                <ul>
+                    <li><strong>Click anywhere</strong> to place star nodes (up to your limit)</li>
+                    <li><strong>Earn money</strong> from:
+                        <ul>
+                            <li>Wall bounces - every time a node hits a wall</li>
+                            <li>Node collisions - when nodes bounce off each other</li>
+                            <li>Edge connections - passive income per second</li>
+                        </ul>
+                    </li>
+                    <li><strong>Buy upgrades</strong> to increase income and node limit</li>
+                    <li><strong>Prestige</strong> when ready to earn Dark Matter for permanent bonuses</li>
+                    <li><strong>Unlock</strong> new node types: Magnet and Golden</li>
+                </ul>
+                <h3>Tips:</h3>
+                <ul>
+                    <li>Start by placing your first 3 nodes</li>
+                    <li>Watch your money grow from bounces and connections</li>
+                    <li>Check the Upgrades tab to spend your earnings</li>
+                    <li>Prestige once you've hit a ceiling for faster progress</li>
+                </ul>
+            </div>
+            <button id="startBtn" class="start-button">Start Playing</button>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Stellar Web: The Game</h2>
+            <h3>Gameplay</h3>
+            <ul>
+                <li><strong>Click</strong> to place nodes (up to your limit)</li>
+                <li><strong>Earn money</strong> from wall bounces, node collisions, and edge connections</li>
+                <li><strong>Upgrades tab</strong> - spend money on improvements</li>
+                <li><strong>Nodes tab</strong> - select which node type to place</li>
+                <li><strong>Prestige tab</strong> - reset for Dark Matter and permanent bonuses</li>
+                <li><strong>Achievements</strong> - complete goals for rewards</li>
+                <li><strong>Controls tab</strong> - adjust visual effects (trail length)</li>
+            </ul>
+            <h3>Node Types</h3>
+            <ul>
+                <li><strong>Basic</strong> - standard nodes (always available)</li>
+                <li><strong>Magnet</strong> - attracts nearby nodes (unlock with ◈)</li>
+                <li><strong>Golden</strong> - 2x income from all sources (unlock with ◈)</li>
+            </ul>
+            <h3>Strategy</h3>
+            <ul>
+                <li>Balance bounce income (speed) vs edge income (connectivity)</li>
+                <li>Prestige when progress slows for permanent multipliers</li>
+                <li>Use Golden nodes to maximize high-connection setups</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Control Panel Toggle -->
+    <button id="togglePanel" class="toggle-btn">⚙️</button>
+
+    <!-- Control Panel -->
+    <div id="controlPanel" class="control-panel open">
+
+        <div class="panel-content">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="upgrades">Upgrades</button>
+                <button class="tab-btn" data-tab="nodes">Nodes</button>
+                <button class="tab-btn" data-tab="prestige">Prestige</button>
+                <button class="tab-btn" data-tab="achievements">Achievements</button>
+                <button class="tab-btn" data-tab="controls">Controls</button>
+                <button class="tab-btn" data-tab="stats">Stats</button>
+            </div>
+
+            <div class="panel-actions">
+                <button id="pauseBtn" class="action-btn-text">Pause</button>
+                <button id="resetBtn" class="action-btn">↺</button>
+            </div>
+
+            <!-- Upgrades Tab -->
+            <div id="upgradesTab" class="tab-content active">
+                <div class="upgrade-list">
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Node Limit</div>
+                            <div class="upgrade-desc">+1 maximum nodes</div>
+                            <div class="upgrade-level">Level: <span id="upgNodeLimit">3</span></div>
+                        </div>
+                        <button id="buyNodeLimit" class="buy-btn" onclick="buyUpgrade('nodeLimit')">
+                            $<span id="costNodeLimit">40</span>
+                        </button>
+                    </div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Bounce Value</div>
+                            <div class="upgrade-desc">More money per wall hit</div>
+                            <div class="upgrade-level">Level: <span id="upgBounceValue">1</span></div>
+                        </div>
+                        <button id="buyBounceValue" class="buy-btn" onclick="buyUpgrade('bounceValue')">
+                            $<span id="costBounceValue">30</span>
+                        </button>
+                    </div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Edge Value</div>
+                            <div class="upgrade-desc">More money per edge per second</div>
+                            <div class="upgrade-level">Level: <span id="upgEdgeValue">1</span></div>
+                        </div>
+                        <button id="buyEdgeValue" class="buy-btn" onclick="buyUpgrade('edgeValue')">
+                            $<span id="costEdgeValue">37</span>
+                        </button>
+                    </div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Node Speed</div>
+                            <div class="upgrade-desc">Faster movement = more bounces</div>
+                            <div class="upgrade-level">Level: <span id="upgSpeed">1</span></div>
+                        </div>
+                        <button id="buySpeed" class="buy-btn" onclick="buyUpgrade('speed')">
+                            $<span id="costSpeed">21</span>
+                        </button>
+                    </div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Connectivity</div>
+                            <div class="upgrade-desc">Easier to form connections</div>
+                            <div class="upgrade-level">Level: <span id="upgConnectivity">1</span></div>
+                        </div>
+                        <button id="buyConnectivity" class="buy-btn" onclick="buyUpgrade('connectivity')">
+                            $<span id="costConnectivity">28</span>
+                        </button>
+                    </div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Node Size</div>
+                            <div class="upgrade-desc">Larger nodes</div>
+                            <div class="upgrade-level">Level: <span id="upgNodeSize">1</span></div>
+                        </div>
+                        <button id="buyNodeSize" class="buy-btn" onclick="buyUpgrade('nodeSize')">
+                            $<span id="costNodeSize">24</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nodes Tab -->
+            <div id="nodesTab" class="tab-content">
+                <div class="node-types">
+                    <h3 style="margin-bottom: 10px; color: #4da6ff;">Select Node Type:</h3>
+                    <div class="node-type-item" onclick="gameState.selectedNodeType = 'basic'; updateNodeTypeSelection()">
+                        <div class="node-type-preview" style="background: radial-gradient(circle, rgba(255,255,255,0.8), transparent);">⭐</div>
+                        <div class="node-type-info">
+                            <div class="node-type-name">Basic Node</div>
+                            <div class="node-type-desc">Standard movement and bouncing</div>
+                        </div>
+                        <div id="selectBasic" class="node-type-selected">✓ SELECTED</div>
+                    </div>
+                    <div class="node-type-item" onclick="if(gameState.darkMatterUpgrades.magnetNodeUnlocked){gameState.selectedNodeType='magnet'; updateNodeTypeSelection();} else {showNotification('Unlock with Dark Matter!');}">
+                        <div class="node-type-preview" style="background: radial-gradient(circle, rgba(160,80,255,0.8), transparent);">⭐</div>
+                        <div class="node-type-info">
+                            <div class="node-type-name">Magnet Node</div>
+                            <div class="node-type-desc">Attracts nearby nodes</div>
+                        </div>
+                        <div id="selectMagnet" class="node-type-locked">🔒 20 ◈</div>
+                    </div>
+                    <div class="node-type-item" onclick="if(gameState.darkMatterUpgrades.goldenNodeUnlocked){gameState.selectedNodeType='golden'; updateNodeTypeSelection();} else {showNotification('Unlock with Dark Matter!');}">
+                        <div class="node-type-preview" style="background: radial-gradient(circle, rgba(255,215,0,0.8), transparent);">⭐</div>
+                        <div class="node-type-info">
+                            <div class="node-type-name">Golden Node</div>
+                            <div class="node-type-desc">2x income from all sources</div>
+                        </div>
+                        <div id="selectGolden" class="node-type-locked">🔒 50 ◈</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prestige Tab -->
+            <div id="prestigeTab" class="tab-content">
+                <div class="prestige-section">
+                    <h3 style="color: #a050ff; margin-bottom: 10px;">Prestige Reset</h3>
+                    <p style="font-size: 0.85em; color: rgba(255,255,255,0.7); margin-bottom: 15px;">
+                        Reset your progress to earn Dark Matter for permanent upgrades.
+                    </p>
+                    <div class="prestige-gain">
+                        <div>You will gain:</div>
+                        <div id="prestigeGain" class="prestige-amount">0 ◈</div>
+                    </div>
+                    <button id="prestigeBtn" class="prestige-btn" onclick="if(confirm('Reset all progress for Dark Matter?')) prestige();">
+                        PRESTIGE
+                    </button>
+
+                    <h3 style="color: #a050ff; margin: 20px 0 10px 0;">Dark Matter Upgrades</h3>
+                    <div class="dm-upgrade-list">
+                        <div class="upgrade-item">
+                            <div class="upgrade-info">
+                                <div class="upgrade-name">Income Multiplier</div>
+                                <div class="upgrade-desc">+10% to all income permanently</div>
+                                <div class="upgrade-level">Level: <span id="dmIncomeLevel">0</span></div>
+                            </div>
+                            <button id="buyDmIncome" class="buy-btn dm-btn" onclick="buyDarkMatterUpgrade('incomeMultiplier')">
+                                ◈ <span id="costDmIncome">5</span>
+                            </button>
+                        </div>
+                        <div class="upgrade-item">
+                            <div class="upgrade-info">
+                                <div class="upgrade-name">Starting Nodes</div>
+                                <div class="upgrade-desc">+1 node limit at start of run</div>
+                                <div class="upgrade-level">Level: <span id="dmStartingLevel">0</span></div>
+                            </div>
+                            <button id="buyDmStarting" class="buy-btn dm-btn" onclick="buyDarkMatterUpgrade('startingNodes')">
+                                ◈ <span id="costDmStarting">10</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Achievements Tab -->
+            <div id="achievementsTab" class="tab-content">
+                <div class="achievement-list">
+                    <div id="achFirstContact" class="achievement-item locked">
+                        <div class="achievement-icon">🌟</div>
+                        <div class="achievement-info">
+                            <div class="achievement-name">First Contact</div>
+                            <div class="achievement-desc">Form your first edge</div>
+                            <div class="achievement-reward">Reward: +$100</div>
+                        </div>
+                    </div>
+                    <div id="achBouncy" class="achievement-item locked">
+                        <div class="achievement-icon">⚡</div>
+                        <div class="achievement-info">
+                            <div class="achievement-name">Bouncy</div>
+                            <div class="achievement-desc">100 total wall bounces</div>
+                            <div class="achievement-reward">Reward: +$500</div>
+                        </div>
+                    </div>
+                    <div id="achWebWeaver" class="achievement-item locked">
+                        <div class="achievement-icon">🕸️</div>
+                        <div class="achievement-info">
+                            <div class="achievement-name">Web Weaver</div>
+                            <div class="achievement-desc">Have 10 simultaneous edges</div>
+                            <div class="achievement-reward">Reward: +$1,000</div>
+                        </div>
+                    </div>
+                    <div id="achNetwork" class="achievement-item locked">
+                        <div class="achievement-icon">🌐</div>
+                        <div class="achievement-info">
+                            <div class="achievement-name">Network</div>
+                            <div class="achievement-desc">Have 25 simultaneous edges</div>
+                            <div class="achievement-reward">Reward: +1 Dark Matter</div>
+                        </div>
+                    </div>
+                    <div id="achMillionaire" class="achievement-item locked">
+                        <div class="achievement-icon">💰</div>
+                        <div class="achievement-info">
+                            <div class="achievement-name">Millionaire</div>
+                            <div class="achievement-desc">Earn $1,000,000 total</div>
+                            <div class="achievement-reward">Reward: +5 Dark Matter</div>
+                        </div>
+                    </div>
+                    <div id="achDarkCollector" class="achievement-item locked">
+                        <div class="achievement-icon">◈</div>
+                        <div class="achievement-info">
+                            <div class="achievement-name">Dark Collector</div>
+                            <div class="achievement-desc">Earn 10 Dark Matter total</div>
+                            <div class="achievement-reward">Reward: Income +10%</div>
+                        </div>
+                    </div>
+                    <div id="achPrestigeMaster" class="achievement-item locked">
+                        <div class="achievement-icon">♻️</div>
+                        <div class="achievement-info">
+                            <div class="achievement-name">Prestige Master</div>
+                            <div class="achievement-desc">Prestige 5 times</div>
+                            <div class="achievement-reward">Reward: Starting nodes +1</div>
+                        </div>
+                    </div>
+                    <div id="achFullHouse" class="achievement-item locked">
+                        <div class="achievement-icon">🏠</div>
+                        <div class="achievement-info">
+                            <div class="achievement-name">Full House</div>
+                            <div class="achievement-desc">Place maximum nodes</div>
+                            <div class="achievement-reward">Reward: +$10,000</div>
+                        </div>
+                    </div>
+                    <div id="achGoldenAge" class="achievement-item locked">
+                        <div class="achievement-icon">⭐</div>
+                        <div class="achievement-info">
+                            <div class="achievement-name">Golden Age</div>
+                            <div class="achievement-desc">Have 3 Golden nodes active</div>
+                            <div class="achievement-reward">Reward: +10 Dark Matter</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls Tab -->
+            <div id="controlsTab" class="tab-content">
+                <p style="font-size: 0.85em; color: rgba(255,255,255,0.7); margin-bottom: 15px;">
+                    Visual effects (don't affect gameplay):
+                </p>
+                <div class="sliders-grid">
+                    <div class="slider-group">
+                        <label>
+                            Node Color: <span id="colorValue">Blue</span>
+                        </label>
+                        <input type="range" id="nodeColor" min="0" max="360" value="200" step="10">
+                    </div>
+                    <div class="slider-group">
+                        <label>
+                            Trail: <span id="trailValue">50</span>
+                        </label>
+                        <input type="range" id="trail" min="0" max="100" value="50" step="10">
+                    </div>
+                </div>
+                <p style="font-size: 0.8em; color: rgba(255,255,255,0.5); margin-top: 15px;">
+                    Game mechanics like speed, connectivity, and node size are controlled by upgrades in the Upgrades tab.
+                </p>
+            </div>
+
+            <!-- Stats Tab -->
+            <div id="statsTab" class="tab-content">
+                <div class="stat-item">
+                    <span class="stat-label">Total Edges:</span>
+                    <span id="totalEdges" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Avg Connections:</span>
+                    <span id="avgConnections" class="stat-value">0.0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Most Connected:</span>
+                    <span id="mostConnected" class="stat-value">Node 0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Network Density:</span>
+                    <span id="networkDensity" class="stat-value">0.0%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Node Count:</span>
+                    <span id="currentNodes" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">FPS:</span>
+                    <span id="fps" class="stat-value">60</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
