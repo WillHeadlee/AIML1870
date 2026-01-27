@@ -40,7 +40,6 @@
             height: 100vh;
             text-align: center;
             padding: 2rem;
-            pointer-events: none;
         }
 
         h1 {
@@ -59,6 +58,35 @@
             opacity: 0.9;
             max-width: 600px;
             text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .projects {
+            margin-top: 3rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: center;
+            max-width: 800px;
+        }
+
+        .project-link {
+            padding: 1rem 2rem;
+            background: rgba(127, 255, 0, 0.1);
+            border: 1px solid rgba(127, 255, 0, 0.3);
+            border-radius: 8px;
+            color: #7fff00;
+            text-decoration: none;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .project-link:hover {
+            background: rgba(127, 255, 0, 0.2);
+            border-color: rgba(127, 255, 0, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(127, 255, 0, 0.3);
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -88,6 +116,13 @@
     <div class="content">
         <h1>William Headlee</h1>
         <p class="greeting">Hello, welcome to my corner of the internet</p>
+
+        <div class="projects">
+            <a href="stellar-web/" class="project-link">Stellar Web Game</a>
+            <a href="echoes-of-blue/" class="project-link">Echoes of Blue</a>
+            <a href="starfield/" class="project-link">Starfield</a>
+            <a href="hello-world/" class="project-link">Hello World</a>
+        </div>
     </div>
 
     <script>
