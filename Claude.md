@@ -1,64 +1,59 @@
-# CLAUDE.md
+Create a CLAUDE.md file in this folder with the following content:
 
-## Project Defaults
+# AIML 1870 - The Royal Decree
 
-- **Language**: [Your primary language, e.g., TypeScript, Python, Go]
-- **Framework**: [e.g., React, FastAPI, Express]
-- **Package manager**: [npm, yarn, pnpm, pip, poetry, etc.]
+## Configuration
+UserGamertag: "foldens"
+Organization: "AIML-1870-2026"
 
-## Autonomous Behavior
+## Project Structure
+This folder is your entire AIML 1870 portfolio. It is a single git repository
+containing all your assignments as subfolders.
 
-- Make changes directly without asking for confirmation
-- Run tests after making code changes
-- Auto-fix linting errors when detected
-- Commit with conventional commit messages (feat:, fix:, docs:, etc.)
-- Create new files as needed without asking
-
-## Code Style
-
-- Use existing patterns in the codebase as reference
-- Follow the project's established conventions
-- Prefer functional/declarative style unless the codebase uses OOP
-- Keep functions small and focused
+Structure:
+- Root folder = Your Gamertag (this IS the git repo)
+- Each assignment = A subfolder (NOT a separate repo)
+- CLAUDE.md = Lives at the root, governs everything
 
 ## Commands
-```bash
-# Development
-dev: [your dev command, e.g., npm run dev]
-test: [your test command, e.g., npm test]
-lint: [your lint command, e.g., npm run lint]
-build: [your build command, e.g., npm run build]
-```
 
-## File Structure
+### Deploy
+When I say "Deploy":
 
-- Components: `src/components/`
-- Utils: `src/utils/`
-- Tests: `__tests__/` or alongside source files as `*.test.ts`
-- Types: `src/types/`
+1. **Verify Location**
+   - Confirm we're inside the Gamertag folder (or a subfolder of it)
+   - Check that .git exists at the root level
 
-## Decision Making
+2. **Stage and Commit**
+   - `git add .`
+   - `git commit -m "Update: [describe what changed]"`
 
-When uncertain between approaches:
-1. Check existing codebase for precedent
-2. Choose the simpler solution
-3. Prefer standard library over external dependencies
-4. If still unclear, pick one and proceed (don't ask)
+3. **Push**
+   - `git push origin main`
 
-## Git Workflow
+4. **Report Success**
+   - Confirm the push succeeded
+   - Remind me of my live URL: https://aiml-1870-2026.github.io/[Gamertag]/
 
-- Commit frequently with meaningful messages
-- Branch naming: `feature/`, `fix/`, `chore/`
-- Don't push unless explicitly asked
+### New Assignment
+When I say "Start [AssignmentName]":
 
-## Testing
+1. Create a folder called `[AssignmentName]` in the root
+2. Create a starter `index.html` inside it
+3. Tell me the folder is ready
 
-- Write tests for new functionality
-- Run existing tests before committing
-- Fix broken tests immediately
+### Show My URLs
+When I say "Show my URLs" or "Where's my stuff?":
 
-## Error Handling
+1. List all subfolders that contain an index.html
+2. For each, show the live URL pattern
 
-- If a command fails, try to fix the issue and retry
-- If dependencies are missing, install them
-- If types are missing, add them or install @types packages
+## Coding Standards
+- Single HTML file projects preferred (unless specified otherwise)
+- No personally identifiable information in code or comments
+- Use descriptive folder names (e.g., "Julia-Set-Explorer" not "assignment3")
+
+## File Naming
+- Main file: `index.html`
+- Assets: lowercase, hyphens (e.g., `particle-system.js`)
+- Assignment folders: Descriptive names or `Assignment-XX`
